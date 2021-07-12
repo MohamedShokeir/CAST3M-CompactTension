@@ -17,7 +17,7 @@ OPTI 'FTRA' 'CLMforce.ps' ;
 *----------------------*
 *
 ALPHA = 23.E-6 ;
-PHI = 0. ;
+PHI = 10. ;
 T = 25. ;
 * GTN
 GTN = 1 ;
