@@ -1,0 +1,25 @@
+@Parser		IsotropicPlasticMisesFlow;
+@Behaviour	voceirr;
+
+@UMATFiniteStrainStrategy[umat] MieheApelLambrechtLogarithmicStrain;
+
+@ExternalStateVariable real phi;
+phi.setEntryName("ThermalNeutronFluence");
+@PhysicalBounds phi in [0:*[;
+@Bounds phi in [0:1000];
+
+@FlowRule{
+			
+const double sig0     = (274. +  21.57834290049524  * pow(phi, 0.3670373657762526));
+const double sigs     = (310. +  16.976813860402935   * pow(phi, 0.3779381231337419));
+const double eps_phi  = (0.0635340625  - 0.0018804575807542848 * pow(phi, 0.4831322836210727));
+
+const double exp_p    = exp(-p / max(eps_phi, 1.e-10));
+
+double Rp      = sig0 + (sigs - sig0) * (1. - exp_p);
+double dRp_ddp = (sigs - sig0) * exp_p / eps_phi;
+
+f       = seq - Rp ;
+df_dseq = 1. ;
+df_dp   = -dRp_ddp ;
+}

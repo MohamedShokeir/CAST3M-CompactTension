@@ -1,0 +1,280 @@
+*************
+* CT calcul *
+*************
+
+OPTI ECHO 0 ; 
+OPTI TRAC 'PSC' ;                  
+OPTI 'FTRA' 'CT_calc.ps' ;
+OPTI 'ERRE' 'FATAL' ;
+
+'OPTI' 'ACQU' 'data_calcul.dgibi';
+
+'MESS' '*****************************';
+* 2D ou 3D:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+DIME0 = val0;
+'MESS' ' 2D-3D  = ' (DIME0) ;
+
+* Elements LINE0s ou quadratiques:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+LINE0 = val0;
+'MESS' ' Linear elements  = ' (LINE0) ;
+
+* Elements a integration selective:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+BBAR0 = val0;
+'MESS' ' Selective integration  = ' (BBAR0) ;
+
+* Elements a integration REDU0e:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+REDU0 = val0;
+'MESS' ' Reduced integration  = ' (REDU0) ;
+
+* Damage :
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+GTN = val0;
+'MESS' ' Damage  = ' (GTN) ;
+
+* Thermal fluence
+'ACQU' MM0*'MOT';
+'ACQU' val0*'FLOTTANT';
+PHI  = val0;
+'MESS' ' Thermal fluence  = ' (PHI) ;
+
+'MESS' '*****************************';
+
+*------------------------ MAILLAGE -----------------------*
+
+OPTI 'REST' 'CT_mesh.sauv';
+REST;	
+
+OPTI DIME DIME0 ELEM ELEM1;
+OPTI EPSI 'UTILISATEUR' ;
+
+SI (DIME0 'EGA' 2);
+  SI (LINE0 'EGA' 1);
+    ELEM1 = QUA4;
+    ELEM2 = ELEM1;
+  SINON;
+    ELEM1 = QUA8;
+    ELEM2 = QUA8; 
+  FINSI;
+FINSI;
+SI (DIME0 'EGA' 3);
+  SI (LINE0 'EGA' 1);
+    ELEM1 = CUB8;
+  SINON;
+    ELEM1 = CU20;
+  FINSI;
+FINSI;
+
+*------------------------ MODELE ET MATERIAU -----------------------*
+*
+* POROSITE INTIALE ET RUPTURE
+F00    = 0.0035 ;
+FR0    = 0.056 ;
+
+*COEFFICIENT DE POISSON
+NU     = 0.33 ;
+
+*MODULE D ELASTICITE ET MASSE VOLUMIQUE DE L ALU
+YOUN1  = 70000. ;
+RHO1   = 2700. ;
+
+*MODULE D ELASTICITE ET MASSE VOLUMIQUE DE L ACIER
+YOUN0  = 200000. ;
+RHO0   = 7850. ;
+
+*VALEUR DU DEPLACEMENT QU ON IMPOSE SUR LA GOUPILLE
+DPLMAX = 2. ;
+
+*VALEUR BOOLEENNE POUR LE TRACE DU GRAPHE 
+GRAPH  = VRAI ;
+*
+ALPHA = 0. ;
+T     = 25. ;
+
+** MATERIAU GOUPILLE 
+*********************
+ MOD1   = 'MODE' GOUP 'MECANIQUE' 'ELASTIQUE' 'ISOTROPE'; 
+ MAT1   = 'MATE' MOD1 'YOUN' YOUN0 'NU' NU 'RHO' RHO0 ;
+
+** MATERIAU LIGAMENT ET CT 
+***************************
+** SANS ENDOMMAGEMENT
+SI (GTN 'NEG' 1) ;
+ COEL   = 'MOTS' 'YOUN' 'NU' 'RHO' 'ALPH' ;
+ PARAMS = 'MOTS' 'PHI' ;
+ SI (DIME0 EGA 3) ;	 
+  STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'EEXZ' 'EEYZ' 'P' ; 
+ FINSI ;
+*
+ SI (DIME0 EGA 2) ;
+  STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'P' ; 
+ FINSI ;
+*
+ MOD2   = 'MODELISER' ENTA 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
+   'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
+   'FCT_LOI' 'umatvoceirr' 'C_MATERIAU' COEL 'C_VARINTER' 
+   STATEV  'PARA_LOI' PARAMS ;
+ MOD3   = 'MODELISER' CT 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
+   'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
+   'FCT_LOI' 'umatvoceirr' 'C_MATERIAU' COEL 'C_VARINTER' 
+   STATEV 'PARA_LOI' PARAMS ;
+ MAT2   = 'MATERIAU' MOD2 'YOUN' YOUN1 'NU' NU 
+    'RHO' RHO1 'ALPH' ALPHA ;
+ MAT3   = 'MATERIAU' MOD3 'YOUN' YOUN1 'NU' NU 
+   'RHO' RHO1 'ALPH' ALPHA ;
+FINSI;
+**
+** AVEC ENDOMMAGEMENT
+SI (GTN 'EGA' 1) ;
+   COEL   = 'MOTS' 'YOUN' 'NU' 'RHO' 'PHI' ;
+  SI (DIME0 EGA 3) ;
+   STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'EEXZ' 'EEYZ' 
+     'P' 'F' 'FN' 'BROK' ; 
+  FINSI ;
+*				 
+  SI (DIME0 EGA 2) ;
+   STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'P' 'F' 'FN' 'BROK' ; 
+ 	FINSI ;	
+*
+  MOD2   = 'MODELISER' ENTA 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
+    'UTILISATEUR' 'LIB_LOI' 'src/libUmatBehaviour.so' 
+    'FCT_LOI' 'umatgtn_malls' 'C_MATERIAU' 
+    COEL 'C_VARINTER' STATEV ;
+  MAT2   = 'MATERIAU' MOD2 'YOUN' YOUN1 'NU' NU 
+    'RHO' RHO1 'PHI' PHI ;
+  MOD3 = 'MODELISER' CT 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
+    'UTILISATEUR' 'LIB_LOI' 'src/libUmatBehaviour.so' 
+    'FCT_LOI' 'umatgtn_malls' 'C_MATERIAU' 
+    COEL 'C_VARINTER' STATEV ;
+  MAT3 = 'MATERIAU' MOD3 'YOUN' YOUN1 'NU' NU 
+    'RHO' RHO1 'PHI' PHI ;
+FINSI;
+**
+*------------------------ MATERIAU TOTAL ---------------------------*
+*
+MODIN  = MOD2 ET MOD3 ;
+MODTOT = MOD1 ET MODIN ;
+MATTOT = MAT1 ET MAT2 ET MAT3 ;
+
+* INITIALISATION VAR INTERN:
+** SANS ENDOMMAGEMENT
+SI (GTN 'NEG' 1) ;
+ SI (DIME0 'EGA' 3) ;	 
+  VAR0  = MANU CHML MODTOT 'EEXX' 0. 'EEYY' 0. 'EEZZ' 0. 'EEXY' 0. 
+     'EEXZ' 0. 'EEYZ' 0. 'P' 0. ;
+ FINSI ;
+ SI (DIME0 'EGA' 2) ;
+  VAR0  = MANU CHML MODTOT 'EEXX' 0. 'EEYY' 0. 'EEZZ' 0. 'EEXY' 0. 
+     'P' 0. ; 
+ FINSI ;
+FINSI;
+** AVEC ENDOMMAGEMENT
+SI (GTN 'EGA' 1) ;
+  SI (DIME0 'EGA' 3) ;
+   VAR0 = MANU CHML MODTOT 'EEXX' 0. 'EEYY' 0. 'EEZZ' 0. 'EEXY' 0.
+     'EEXZ' 0. 'EEYZ' 0. 'P' 0. 'F' F00 'FN' 0. 'BROK' 0. ;
+  FINSI ;
+  SI (DIME0 'EGA' 2) ;
+   VAR0 = MANU CHML MODTOT 'EEXX' 0. 'EEYY' 0. 'EEZZ' 0. 'EEXY' 0. 
+     'P' 0. 'F' F00 'FN' 0. 'BROK' 0. ;
+  FINSI ;	
+FINSI ;	
+
+*-------------------- CONDITIONS AUX LIMITES -----------------------*
+BLM1Z = BLOQ UZ_0 'UZ' ;
+BLM2Y = BLOQ Lg0 'UY' ;
+BLM3X = BLOQ CHARn 'UX' ;
+BLM4Y = BLOQ CHARn 'UY' ;
+*
+CLM   = BLM1Z ET BLM2Y ET BLM3X ET BLM4Y ;
+*
+DEP1  = DEPI BLM4Y DPLMAX ;
+
+SI (GRAPH EGA VRAI) ;
+  VEC1 = VECT (DEP1 NOMC 'UY') 5. 'UX' 'UY' COUL 'ROUGE' ;
+  TRAC VEC1 (CTTOT) TITRE 'DEPLACEMENT IMPOSEE' ;
+FINSI ; 
+		     
+*-------------- CHARGEMENT EN DEPLACEMENT IMPOSEE -----------------*
+TFIN  = 1. ; 
+EV0   = 'EVOL' 'MANU' TEMPS ('PROG' 0. TFIN) Y ('PROG' 0. 1. ) ; 
+CHA0  = 'CHAR' 'DIMP' DEP1 EV0 ;
+*
+MESS PHI;
+CHPHI = 'MANU' 'CHPO' CTTOT 1 'PHI' PHI ;
+EV1   = 'EVOL' 'MANU' TEMPS ( 'PROG' 0. TFIN ) Y ( 'PROG' 1. 1. ) ; 
+CHA1  = 'CHAR' 'PHI' CHPHI EV1 ; 
+*
+LTPS  = (PROG 0. PAS 1.E-2 1.) ;
+LTPC  = (PROG 0. PAS 1.E-2 1.) ;
+
+*-------------- CREATION DE LA TABLE POUR PASAPAS ----------------*
+TAB1                       = TABLE ;
+TAB1.'VARIABLES_INTERNES'  = TABLE ;
+TAB1.VARIABLES_INTERNES.0  = VAR0 ;
+TAB1.'MODELE'              = MODTOT ;
+*
+TAB1.'CARACTERISTIQUES'    = MATTOT ;
+TAB1.'CHARGEMENT'          = CHA0 ET CHA1;
+TAB1.'BLOCAGES_MECANIQUES' = CLM ;
+TAB1.'TEMPS_CALCULES'      = LTPC ;
+TAB1.'TEMPS_SAUVES'        = LTPS ;
+*
+SI (BBAR0 'EGA' 0);
+ TAB1.'GRANDS_DEPLACEMENTS' = VRAI ;
+ TAB1.'LAGRANGIEN'          = 'MOT' 'REACTUALISE' ;
+FINSI;
+TAB1.'CONVERGENCE_FORCEE'  = VRAI ;
+*
+TAB1.'PROCEDURE_PERSO1'    = FAUX ;
+TAB1.'PAS_AJUSTE'          = FAUX ;
+TAB1.'IND'                 = 0 ;
+TAB1.'DEP'                 = 0 ;
+TAB1.'FOR'                 = 0 ;
+*
+SI (GTN 'EGA' 1);
+ TAB1.'MO_ACT'              = TABLE ;
+ TAB1.'MAT_ACT'             = TABLE ; 
+ TAB1.'MAI_ACT'             = TABLE ;
+*
+ TAB1.'MONDEPLACEMENTS'     = TABLE ;
+ TAB1.'MAREACTIONS'         = TABLE ;
+ TAB1.'MACONTRAINTES'       = TABLE ;
+ TAB1.'MESVAR_INTERNES'     = TABLE ;
+ TAB1.'J'                   = 0 ;
+*
+ TAB1.'DFMAX'         = 1.e-2 ;
+ TAB1.'FMAX_P'        = 0. ;
+ TAB1.'FMAX_N'        = 0. ;
+ TAB1.'F_PREC'        = MANU CHML MODTOT 'SCAL' F00 ;
+ TAB1.'NBRO'          = 0 ;
+ TAB1.'BROO'          = 0 ;
+ TAB1.'BROC'          = 0 ;
+ TAB1.'DEP'           = 0 ;
+ TAB1.'FOR'           = 0 ;
+ TAB1.'IND'           = 0 ;
+ TAB1 .'LMCAV'        = 0. ;
+ TAB1 .'LVARMCAV'     = 0. ;
+ TAB1 .'TOTPTCAS'     = 0. ; 
+ TAB1 .'TOTECAS'      = 0. ;
+FINSI;
+*
+PASAPAS TAB1 ;
+	 
+*-------------------- SAUVEGARDE DES DONNEES --------------------*
+
+OPTI SAUV 'CT_calc.sauv' ;
+SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0 ALPHA  
+LTPS LTPC GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 T 
+YOUN0 YOUN1 NU RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 VOCE  
+PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT;		 
+
+FIN ;

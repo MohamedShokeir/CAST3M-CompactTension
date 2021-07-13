@@ -1,0 +1,816 @@
+**********************
+* CT post-traitement *
+**********************
+
+OPTI ECHO 0 ;      
+OPTI TRAC 'PSC' ;                  
+OPTI 'FTRA' 'CT_post.ps' ;
+OPTI 'ERRE' 'FATAL' ;
+
+'OPTI' 'ACQU' 'data_calcul.dgibi';
+
+'MESS' '*****************************';
+
+* 2D ou 3D:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+DIME0 = val0;
+'MESS' ' 2D-3D  = ' (DIME0) ;
+
+* Elements LINE0s ou quadratiques:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+LINE0 = val0;
+'MESS' ' Linear elements  = ' (LINE0) ;
+
+* Elements a integration selective:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+BBAR0 = val0;
+'MESS' ' Selective integration  = ' (BBAR0) ;
+
+* Elements a integration REDU0e:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+REDU0 = val0;
+'MESS' ' Reduced integration  = ' (REDU0) ;
+
+* Damage :
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+GTN = val0;
+'MESS' ' Damage  = ' (GTN) ;
+
+* Thermal fluence
+'ACQU' MM0*'MOT';
+'ACQU' val0*'FLOTTANT';
+PHI  = val0;
+'MESS' ' Thermal fluence  = ' (PHI) ;
+
+OPTI COSC BLANC ;
+*OPTI TRAC OPEN ;
+
+*-------------------------------------------------------------------*
+*                   PARAMETRES DU POST TRAITEMENT                   *
+*-------------------------------------------------------------------*
+
+*NBNE est le nombre de points de Gauss par élément {4|8}
+NBNE  = 4 ;
+
+*OU SOUHAITEZ VOUS REGARDER LES POINTS DE GAUSS
+BAS   = VRAI ;
+
+*NUMERO DU PAS DE TEMPS POUR LES EVOLUTIONS
+P     = 5 ; 
+*NUMERO DE L ELEMENT POUR LES CHAMPS AUX POINTS DE GAUSS
+NE    = 1 ;
+
+*ORIENTATION DU LIGAMENT SELON X (CT12.5) 
+*DU CODE LORS DU CHANGEMENT
+ORI_LIEN = 'X' ;
+
+OPTI REST 'CT_calc.sauv' ;
+REST ;
+
+*CREATION DES TABLES POUR RECUPERER LES INFORMATIONS NECESSAIRES
+*AUX POINTS DE GAUSS INFERIEURS SUR LE LIGAMENT
+TABLE_SORTIE            = TABLE ;
+TABLE_SORTIE.'SIG_H'    = TABLE ;
+TABLE_SORTIE.'SIG_1'    = TABLE ;
+TABLE_SORTIE.'DEF_PLAS' = TABLE ;
+TABLE_SORTIE.'TRIAX'    = TABLE ;
+TABLE_SORTIE.'PORO'     = TABLE ;
+TABLE_SORTIE.'SIG_YY'   = TABLE ;
+TABLE_SORTIE.'COOR_X'   = TABLE ;
+TABLE_SORTIE.'COOR_Z'   = TABLE ;
+*AUX POINTS DE GAUSS DANS UN ELEMENT FINI AU CHOIX SUR LE LIGAMENT
+TABLE_SORTIE.'SIG_YY_gs_1_A' = TABLE ;
+TABLE_SORTIE.'SIG_YY_gs_2_A' = TABLE ;
+TABLE_SORTIE.'SIG_YY_gs_3_A' = TABLE ;
+TABLE_SORTIE.'SIG_YY_gs_4_A' = TABLE ;
+
+TABLE_SORTIE.'DEF_PLAS_gs_1_A' = TABLE ;
+TABLE_SORTIE.'DEF_PLAS_gs_2_A' = TABLE ;
+TABLE_SORTIE.'DEF_PLAS_gs_3_A' = TABLE ;
+TABLE_SORTIE.'DEF_PLAS_gs_4_A' = TABLE ;
+
+TABLE_SORTIE.'TRIAX_gs_1_A' = TABLE ;
+TABLE_SORTIE.'TRIAX_gs_2_A' = TABLE ;
+TABLE_SORTIE.'TRIAX_gs_3_A' = TABLE ;
+TABLE_SORTIE.'TRIAX_gs_4_A' = TABLE ;
+
+TABLE_SORTIE.'PORO_gs_1_A' = TABLE ;
+TABLE_SORTIE.'PORO_gs_2_A' = TABLE ;
+TABLE_SORTIE.'PORO_gs_3_A' = TABLE ;
+TABLE_SORTIE.'PORO_gs_4_A' = TABLE ;
+
+TABLE_SORTIE.'SIG_H_gs_1_A' = TABLE ;
+TABLE_SORTIE.'SIG_H_gs_2_A' = TABLE ;
+TABLE_SORTIE.'SIG_H_gs_3_A' = TABLE ;
+TABLE_SORTIE.'SIG_H_gs_4_A' = TABLE ;
+
+TABLE_SORTIE.'SIG_1_gs_1_A' = TABLE ;
+TABLE_SORTIE.'SIG_1_gs_2_A' = TABLE ;
+TABLE_SORTIE.'SIG_1_gs_3_A' = TABLE ;
+TABLE_SORTIE.'SIG_1_gs_4_A' = TABLE ;
+*CREATION DES LISTES POUR LES CHAMPS DES CONTRAINTES AUX POINTS DE GAUSS
+SIG_YY_gs_1_A = PROG ;
+SIG_YY_gs_2_A = PROG ;
+SIG_YY_gs_3_A = PROG ;
+SIG_YY_gs_4_A = PROG ;
+
+DEF_PLAS_gs_1_A = PROG ;
+DEF_PLAS_gs_2_A = PROG ;
+DEF_PLAS_gs_3_A = PROG ;
+DEF_PLAS_gs_4_A = PROG ;
+
+TRIAX_gs_1_A = PROG ;
+TRIAX_gs_2_A = PROG ;
+TRIAX_gs_3_A = PROG ;
+TRIAX_gs_4_A = PROG ;
+
+PORO_gs_1_A = PROG ;
+PORO_gs_2_A = PROG ;
+PORO_gs_3_A = PROG ;
+PORO_gs_4_A = PROG ;
+
+SIG_H_gs_1_A = PROG ;
+SIG_H_gs_2_A = PROG ;
+SIG_H_gs_3_A = PROG ;
+SIG_H_gs_4_A = PROG ;
+
+SIG_1_gs_1_A = PROG ;
+SIG_1_gs_2_A = PROG ;
+SIG_1_gs_3_A = PROG ;
+SIG_1_gs_4_A = PROG ;
+
+*LISTE POUR LA RECUPERATION DE LA FORCE ET DU DEPLACEMENT
+LFORC = PROG ;
+LFORC = INSE LFORC 1 (0.) ;
+
+LDEPL = PROG ;
+LDEPL = INSE LDEPL 1 (0.) ;
+
+SI (GTN EGA 1) ;
+*    NBPAS  = (DIME (TAB1.LVARMCAV))- 1 ;
+     NBPAS  = (DIME (TAB1.DEPLACEMENTS))- 1 ;
+     TAILLE = ENTI (NBPAS) ; 
+	 SINON ;
+	     NBPAS  = (DIME (TAB1.TEMPS))- 1 ;
+         TAILLE = ENTI (NBPAS) ; 
+FINSI ;
+
+REPE I (TAILLE) ;
+ 	 
+*SELECTION DES ELEMENTS DONT AU MOINS UN NOEUD EST SUR LE LIGAMENT
+     SI (GTN EGA 1) ;
+          SI (DIME0 EGA 2);
+             P_LIGA     = LIGNELIGA ;
+		      SINON ;
+			     P_LIGA = (TAB1.'MAI_ACT'.&I) POINT 'PLAN' (0 0 0) (1 0 0) (0 0 1) 1.E-9 ;
+		  FINSI ;
+*TABLE POUR LA VISUALISATION DES CHAMPS AU POINTS DE GAUSS
+          TABV = VISUPG (TAB1.'MO_ACT'.&I) ;
+*NOMBRE DE NOEUDS SUR LE LIGAMENT
+     	  NB          = NBNO P_LIGA ;
+     	  ELT_LIGA    = (TAB1.'MAI_ACT'.&I) ELEM 'APPUYE' 'LARGEMENT' P_LIGA ;
+*COORD X DES PTS DE GAUSS
+          AX1         = CHAN 'CHAM' (COOR 1 (TAB1.'MAI_ACT'.&I) ) (TAB1.'MO_ACT'.&I) 'STRESSES' ;
+          AX          = REDU AX1 ELT_LIGA ;
+*COORD Y DES PTS DE GAUSS
+          AY1         = CHAN 'CHAM' (COOR 2 (TAB1.'MAI_ACT'.&I) ) (TAB1.'MO_ACT'.&I) 'STRESSES' ;
+          AY          = REDU AY1 ELT_LIGA ;
+		  SI (DIME0 EGA 3) ;
+*COORD Z DES PTS DE GAUSS
+             AZ1      = CHAN 'CHAM' (COOR 3 (TAB1.'MAI_ACT'.&I) ) (TAB1.'MO_ACT'.&I) 'STRESSES' ;
+             AZ       = REDU AZ1 ELT_LIGA ;             		  
+		  FINSI ;
+		  
+*FORCE
+          LREAC_I     = REDU (TAB1.'MAREACTIONS'.&I) CHARn ;
+          ER_I        = MAXI(EXCO 'FY' (RESU LREAC_I)) ;  
+          LFORC       = LFORC ET (PROG ER_I) ; 
+*DEPLACEMENT
+          LDP_I       = REDU (TAB1.'MONDEPLACEMENTS'.&I) CMOD ;
+          EDP_I       = MAXI (EXCO 'UY' (RESU LDP_I)) ;
+          LDEPL       = LDEPL ET (PROG EDP_I) ;
+* DEFORMEE
+          DEFOT_I     = TAB1.'MONDEPLACEMENTS'.&I ;
+          DEFO_I      = DEFO DEFOT_I CTTOT 1. ; 
+
+*VISUALISATION DES CHAMPS AUX POINTS DE GAUSS
+*********************************************
+
+*EXTRACTION DE SIGMA YY SOIT SIGMA OUVERTURE
+          SIG_YY0     = REDU (EXCO (TAB1.'MACONTRAINTES'. &I) 'SMYY') (TAB1.'MAI_ACT'.&I) ;
+		  TRAC SIG_YY0 (TAB1.'MO_ACT'.&I) 'BOITE' SU7 TITRE 'Contrainte d ouverture SIGyy' ;
+		  VISUPG (TAB1.'MO_ACT'.&I) SIG_YY0 'SMYY' TABV DEFOT_I 'SIGyy PG' ;
+*EXTRACTION DE LA VAR INTERNE D ECROUISSAGE
+          EPS_PLAS0   = REDU (EXCO (TAB1.'MESVAR_INTERNES'. &I) 'P') (TAB1.'MAI_ACT'.&I) ;
+		  TRAC EPS_PLAS0 (TAB1.'MO_ACT'.&I) 'BOITE' SU7 TITRE 'Déformation plastique' ;
+		  VISUPG (TAB1.'MO_ACT'.&I) EPS_PLAS0 'P' TABV DEFOT_I 'Defo_plas PG' ;		  
+*EXTRACTION DE LA VAR INTERNE D ENDOMMAGEMENT
+          PORO_END0   = REDU (EXCO (TAB1.'MESVAR_INTERNES'. &I) 'F') (TAB1.'MAI_ACT'.&I) ;
+		  TRAC PORO_END0 (TAB1.'MO_ACT'.&I) 'BOITE' SU7 TITRE 'Porosité' ;
+		  VISUPG (TAB1.'MO_ACT'.&I) PORO_END0 'F' TABV DEFOT_I 'Porosité PG' ;		  
+*CALCUL DU CHAMPS DE CONTRAINTE HYDROSTATIQUE
+          I1 I2 I3    = INVA (TAB1.'MO_ACT'. &I) (TAB1.'MACONTRAINTES'. &I) ;
+          SIG_H0       = (REDU I1 ELT_LIGA)/3. ;
+*CALCUL DE LA PREMIERE CONTRAINTE PRINCIPALE
+          TENS_SIG0   = PRIN (TAB1.'MACONTRAINTES'. &I) (TAB1.'MO_ACT'. &I) ;
+          SIG_10      = REDU (EXCO TENS_SIG0 'SI11') ELT_LIGA ;
+*CALCUL DU CHAMPS DE TAUX DE TRIAXIALITE
+          SIG_VM0      = VMIS (TAB1.'MO_ACT'. &I) (TAB1.'MACONTRAINTES'. &I) ;
+          TRAC SIG_VM0 (TAB1.'MO_ACT'.&I) 'BOITE' SU7 TITRE 'VON MISES' ;
+		  VISUPG (TAB1.'MO_ACT'.&I) SIG_VM0 'SCAL' TABV DEFOT_I 'VON MISES PG' ;
+		  
+*FIN DE LA PARTIE VISUALISATION
+*******************************
+	  
+*EXTRACTION DE SIGMA YY SOIT SIGMA OUVERTURE
+          SIG_YY      = REDU (EXCO (TAB1.'MACONTRAINTES'. &I) 'SMYY') ELT_LIGA ;
+*EXTRACTION DE LA VAR INTERNE D ECROUISSAGE
+          EPS_PLAS    = REDU (EXCO (TAB1.'MESVAR_INTERNES'. &I) 'P') ELT_LIGA ;
+*EXTRACTION DE LA VAR INTERNE D ENDOMMAGEMENT
+          PORO_END    = REDU (EXCO (TAB1.'MESVAR_INTERNES'. &I) 'F') ELT_LIGA ;
+*CALCUL DU CHAMPS DE CONTRAINTE HYDROSTATIQUE
+          I1 I2 I3    = INVA (TAB1.'MO_ACT'. &I) (TAB1.'MACONTRAINTES'. &I) ;
+          SIG_H       = (REDU I1 ELT_LIGA)/3. ;
+*CALCUL DE LA PREMIERE CONTRAINTE PRINCIPALE
+          TENS_SIG    = PRIN (TAB1.'MACONTRAINTES'. &I) (TAB1.'MO_ACT'. &I) ;
+          SIG_1       = REDU (EXCO TENS_SIG 'SI11') ELT_LIGA ;
+*CALCUL DU CHAMPS DE TAUX DE TRIAXIALITE
+          SIG_VM      = VMIS (TAB1.'MO_ACT'. &I) (TAB1.'MACONTRAINTES'. &I) ;
+          SCAL_SIG_VM = CHAN TYPE SIG_VM SCALAIRE ;
+          SCAL_SIG_VM = REDU SCAL_SIG_VM ELT_LIGA ;
+          TAUX_TRIAX  = SIG_H/SCAL_SIG_VM ;	
+     FINSI ;	
+     	 
+     SI (GTN EGA 0);
+          SI (DIME0 EGA 2);
+             P_LIGA     = LIGNELIGA ;
+		      SINON ;
+			     P_LIGA = CTTOT POINT 'PLAN' (0 0 0) (1 0 0) (0 0 1) 1.E-9 ;
+		  FINSI ;
+*TABLE POUR LA VISUALISATION DES CHAMPS AU POINTS DE GAUSS
+Tabv = VISUPG MODTOT ;
+*NOMBRE DE NOEUDS SUR LE LIGAMENT
+     	  NB          = NBNO P_LIGA ;
+     	  ELT_LIGA    = CTTOT ELEM 'APPUYE' 'LARGEMENT' P_LIGA ;
+*COORD X DES PTS DE GAUSS
+          AX1         = CHAN 'CHAM' (COOR 1 CTTOT ) MODTOT 'STRESSES' ;
+          AX          = REDU AX1 ELT_LIGA ;
+*COORD Y DES PTS DE GAUSS
+          AY1         = CHAN 'CHAM' (COOR 2 CTTOT ) MODTOT 'STRESSES' ;
+          AY          = REDU AY1 ELT_LIGA ;
+		  SI (DIME0 EGA 3) ;
+*COORD Z DES PTS DE GAUSS
+             AZ1      = CHAN 'CHAM' (COOR 3 CTTOT ) MODTOT 'STRESSES' ;
+             AZ       = REDU AZ1 ELT_LIGA ; 
+          FINSI ;
+		  
+*FORCE
+           LREAC_I     = REDU (TAB1.'REACTIONS'.&I) CHARn ;
+           ER_I        = MAXI(EXCO 'FY' (RESU LREAC_I)) ;  
+           LFORC       = LFORC ET (PROG ER_I) ; 
+*DEPLACEMENT
+           LDP_I       = REDU (TAB1.'DEPLACEMENTS'.&I) CMOD ;
+           EDP_I       = MAXI (EXCO 'UY' (RESU LDP_I)) ;
+           LDEPL       = LDEPL ET (PROG EDP_I) ;
+* DEFORMEE
+           DEFOT_I     = TAB1.'DEPLACEMENTS'.&I ;
+           DEFO_I      = DEFO DEFOT_I CTTOT 1. ;
+
+*VISUALISATION DES CHAMPS AUX POINTS DE GAUSS
+*********************************************
+
+*EXTRACTION DE SIGMA YY SOIT SIGMA OUVERTURE
+          SIG_YY0     = REDU (EXCO (TAB1.'CONTRAINTES'. &I) 'SMYY') CTTOT ;
+		  TRAC SIG_YY0 MODTOT 'BOITE' SU7 TITRE 'Contrainte d ouverture SIGyy' ;
+		  VISUPG MODTOT SIG_YY0 'SMYY' TABV DEFOT_I 'SIGyy PG' ;
+*EXTRACTION DE LA VAR INTERNE D ECROUISSAGE
+          EPS_PLAS0   = REDU (EXCO (TAB1.'VARIABLES_INTERNES'. &I) 'P') CTTOT ;
+		  TRAC EPS_PLAS0 MODTOT 'BOITE' SU7 TITRE 'Déformation plastique' ;
+		  VISUPG MODTOT EPS_PLAS0 'P' TABV DEFOT_I 'Defo_plas PG' ;		   
+*CALCUL DU CHAMPS DE CONTRAINTE HYDROSTATIQUE
+          I1 I2 I3    = INVA MODTOT (TAB1.'CONTRAINTES'. &I) ;
+          SIG_H0       = (REDU I1 ELT_LIGA)/3. ;
+*CALCUL DE LA PREMIERE CONTRAINTE PRINCIPALE
+          TENS_SIG0   = PRIN (TAB1.'CONTRAINTES'. &I) MODTOT ;
+          SIG_10      = REDU (EXCO TENS_SIG0 'SI11') ELT_LIGA ;
+*CALCUL DU CHAMPS DE TAUX DE TRIAXIALITE
+          SIG_VM0      = VMIS MODTOT (TAB1.'CONTRAINTES'. &I) ;
+          TRAC SIG_VM0 MODTOT 'BOITE' SU7 TITRE 'VON MISES' ;
+		  VISUPG MODTOT SIG_VM0 'SCAL' TABV DEFOT_I 'VON MISES PG' ;
+		  
+*FIN DE LA PARTIE VISUALISATION
+*******************************
+		   
+*EXTRACTION DE SIGMA YY SOIT SIGMA OUVERTURE
+           SIG_YY      = REDU (EXCO (TAB1.'CONTRAINTES'. &I) 'SMYY') ELT_LIGA ;
+*EXTRACTION DE LA VAR INTERNE D ECROUISSAGE
+           EPS_PLAS    = REDU (EXCO (TAB1.'VARIABLES_INTERNES'. &I) 'P') ELT_LIGA ;
+*CALCUL DU CHAMPS DE CONTRAINTE HYDROSTATIQUE
+           I1 I2 I3    = INVA MODTOT (TAB1.'CONTRAINTES'. &I) ;
+           SIG_H       = (REDU I1 ELT_LIGA)/3. ;
+*CALCUL DE LA PREMIERE CONTRAINTE PRINCIPALE
+           TENS_SIG    = PRIN (TAB1.'CONTRAINTES'. &I) MODTOT ;
+           SIG_1       = REDU (EXCO TENS_SIG 'SI11') ELT_LIGA ;
+*CALCUL DU CHAMPS DE TAUX DE TRIAXIALITE
+           SIG_VM      = VMIS MODTOT (TAB1.'CONTRAINTES'. &I) ;
+           SCAL_SIG_VM = CHAN TYPE SIG_VM SCALAIRE ;
+           SCAL_SIG_VM = REDU SCAL_SIG_VM ELT_LIGA ;
+           TAUX_TRIAX  = SIG_H/SCAL_SIG_VM ;			 
+     FINSI ;
+     	 
+*LISTES DE SAUVEGARDES
+     LAX    = PROG ;
+     LAY    = PROG ;
+	 
+	 LAX_i  = PROG ;
+     LAY_i  = PROG ;
+	
+     SI (DIME0 EGA 3) ;
+	  LAZ   = PROG ;
+	  LAZ_i = PROG ;
+     FINSI ;
+	
+     LSIG_YY   = PROG ;
+     LSIG_H    = PROG ;
+     LSIG_1    = PROG ;
+     LEPS_PLAS = PROG ;
+     LTRIAX    = PROG ;
+	 SI (GTN EGA 1) ;
+            LPORO = PROG ;
+	 FINSI ;
+	     
+*** BOUCLE PERMETTANT D ASSOCIER LA BONNE VALEUR DES CHAMPS AUX PONITS DE GAUSS
+     REPE N_ELT (NBEL ELT_LIGA) ; COMM 'BOUCLE SUR LES ELEMENTS' ;
+         MESS 'ELT' &N_ELT ;
+*LISTE INTERMEDIAIRE POUR LE STOCK DE TOUS LES PI DE L ELEMENTS
+         L_i_VALAX = PROG ;
+         L_i_VALAY = PROG ;
+	     SI (DIME0 EGA 3) ;
+             L_i_VALAZ = PROG ;
+	     FINSI ;
+         L_i_VAL_SIG_YY   = PROG ;
+         L_i_VAL_SIG_H    = PROG ;
+         L_i_VAL_SIG_1    = PROG ;
+         L_i_VAL_EPS_PLAS = PROG ;
+         L_i_VAL_TRIAX    = PROG ;
+	     SI (GTN EGA 1) ;
+             L_i_VAL_PORO     = PROG ;
+	     FINSI ;
+	               
+         REPE N_PG NBNE ; COMM 'BOUCLE SUR LES POINTS DE GAUSS' ;
+		 
+*	         LIST (&N_PG) ;
+             L_i_VALAX = L_i_VALAX ET (PROG (EXTR AX 'SCAL' 1 &N_ELT &N_PG)) ;
+             L_i_VALAY = L_i_VALAY ET (PROG (EXTR AY 'SCAL' 1 &N_ELT &N_PG)) ;
+		     SI (DIME0 EGA 3) ;
+                 L_i_VALAZ = L_i_VALAZ ET (PROG (EXTR AZ 'SCAL' 1 &N_ELT &N_PG)) ;
+		     FINSI ;
+             L_i_VAL_SIG_YY   = L_i_VAL_SIG_YY   ET (PROG (EXTR SIG_YY 'SMYY' 1 &N_ELT &N_PG)) ;
+             L_i_VAL_SIG_H    = L_i_VAL_SIG_H    ET (PROG (EXTR SIG_H 'SCAL' 1 &N_ELT &N_PG)) ;
+	         L_i_VAL_SIG_1    = L_i_VAL_SIG_1    ET (PROG (EXTR SIG_1 'SI11' 1 &N_ELT &N_PG)) ;
+	         L_i_VAL_EPS_PLAS = L_i_VAL_EPS_PLAS ET (PROG (EXTR EPS_PLAS 'P' 1 &N_ELT &N_PG)) ;
+             L_i_VAL_TRIAX    = L_i_VAL_TRIAX    ET (PROG (EXTR TAUX_TRIAX 'SCAL' 1 &N_ELT &N_PG)) ;
+		     SI (GTN EGA 1) ;
+                 L_i_VAL_PORO = L_i_VAL_PORO     ET (PROG (EXTR PORO_END 'F' 1 &N_ELT &N_PG)) ;
+		     FINSI ;
+		     
+		     LAX_i = LAX_i ET (PROG (EXTR L_i_VALAX &N_PG)) ;
+	         LAY_i = LAY_i ET (PROG (EXTR L_i_VALAY &N_PG)) ;
+			 
+			 SI (DIME0 EGA 3) ;
+			     LAZ_i = LAZ_i ET (PROG (EXTR L_i_VALAY &N_PG)) ;
+		         P_GAUSS_SELEC = POINT LAX_i LAY_i LAZ_i COUL 'BLEU' ;
+                 SINON ;
+				     P_GAUSS_SELEC = POINT LAX_i LAY_i COUL 'BLEU' ;
+			 FINSI ;
+*            TRACE (ELT_LIGA ET (P_LIGA COUL 'ROUGE') ET P_GAUSS_SELEC) ;
+
+		     SI(&N_ELT EGA NE) ;
+		          SI (&N_PG EGA 1) ;
+		             SIG_YY_gs_1_A   = SIG_YY_gs_1_A   ET (PROG (EXTR SIG_YY 'SMYY' 1 &N_ELT &N_PG)) ;
+		      		 DEF_PLAS_gs_1_A = DEF_PLAS_gs_1_A ET (PROG (EXTR EPS_PLAS 'P' 1 &N_ELT &N_PG)) ;
+		      		 TRIAX_gs_1_A    = TRIAX_gs_1_A    ET (PROG (EXTR TAUX_TRIAX 'SCAL' 1 &N_ELT &N_PG)) ;
+		      		 SI (GTN EGA 1) ;
+		      		     PORO_gs_1_A = PORO_gs_1_A     ET (PROG (EXTR PORO_END 'F' 1 &N_ELT &N_PG)) ;
+		      		 FINSI ;
+		      		 SIG_H_gs_1_A    = SIG_H_gs_1_A    ET (PROG (EXTR SIG_H 'SCAL' 1 &N_ELT &N_PG)) ;
+		      		 SIG_1_gs_1_A    = SIG_1_gs_1_A    ET (PROG (EXTR SIG_1 'SI11' 1 &N_ELT &N_PG)) ;
+		      		 
+		             TABLE_SORTIE.'SIG_YY_gs_1_A  '. &I = SIG_YY_gs_1_A   ;
+		             TABLE_SORTIE.'DEF_PLAS_gs_1_A'. &I = DEF_PLAS_gs_1_A ;
+		             TABLE_SORTIE.'TRIAX_gs_1_A   '. &I = TRIAX_gs_1_A    ;
+		      		 SI (GTN EGA 1) ;
+		                 TABLE_SORTIE.'PORO_gs_1_A'. &I = PORO_gs_1_A ;
+		      		 FINSI ;
+		             TABLE_SORTIE.'SIG_H_gs_1_A'. &I    = SIG_H_gs_1_A ;
+		             TABLE_SORTIE.'SIG_1_gs_1_A'. &I    = SIG_1_gs_1_A ;
+					 
+                     SI (&I EGA P) ;						 
+*EVOLUTION DES VARIABLES INTERNES AU POINTS DE GAUSS D UN ELEMENT AU CHOIX	
+*SIGyy - Deformation plastique
+                         SIGyy_DP_1 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_1_A'.&I) 
+						             'DP' (TABLE_SORTIE.'DEF_PLAS_gs_1_A'.&I) ; 
+*Triaxilite - Deformation plastique
+                         TRi_DP_1   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_1_A'. &I) 
+						             'DP' (TABLE_SORTIE.'DEF_PLAS_gs_1_A'. &I) ;
+                         SI (GTN EGA 1) ;
+*Porosité - Deformation plastique
+                             PORO_DP_1  = EVOL MANU 'PORO' (TABLE_SORTIE.'PORO_gs_1_A'. &I) 
+							             'DP' (TABLE_SORTIE.'DEF_PLAS_gs_1_A'. &I) ; 
+*SIGyy - Porosité
+                             SIGyy_PO_1 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_1_A'. &I) 
+							             'PORO' (TABLE_SORTIE.'PORO_gs_1_A'. &I) ;
+*Triaxialité - Porosité
+                             TRi_PO_1   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_1_A'. &I) 
+							             'PORO' (TABLE_SORTIE.'PORO_gs_1_A'. &I) ;
+                         FINSI ;
+						 
+				         OPTI SORT 'SIGyy_DP_1' ;
+                         SORT EXCE SIGyy_DP_1 ; 
+
+				         OPTI SORT 'TRi_DP_1' ;
+                         SORT EXCE TRi_DP_1 ;
+				  
+				         OPTI SORT 'PORO_DP_1' ;
+                         SORT EXCE PORO_DP_1 ;	
+				  
+				         OPTI SORT 'SIGyy_PO_1' ;
+                         SORT EXCE SIGyy_PO_1 ;
+				  
+				         OPTI SORT 'TRi_PO_1' ;
+                         SORT EXCE TRi_PO_1 ;	 
+					 
+                     FINSI ;
+
+		           FINSI ;
+		         	 
+		           SI (&N_PG EGA 2) ;
+		        		 SIG_YY_gs_2_A   = SIG_YY_gs_2_A   ET (PROG (EXTR SIG_YY 'SMYY' 1 &N_ELT &N_PG)) ;
+		        		 DEF_PLAS_gs_2_A = DEF_PLAS_gs_2_A ET (PROG (EXTR EPS_PLAS 'P' 1 &N_ELT &N_PG)) ;
+		        		 TRIAX_gs_2_A    = TRIAX_gs_2_A    ET (PROG (EXTR TAUX_TRIAX 'SCAL' 1 &N_ELT &N_PG)) ;
+		        		 SI (GTN EGA 1) ;
+		        		     PORO_gs_2_A = PORO_gs_2_A     ET (PROG (EXTR PORO_END 'F' 1 &N_ELT &N_PG)) ;
+		        		 FINSI ;
+		        		 SIG_H_gs_2_A    = SIG_H_gs_2_A    ET (PROG (EXTR SIG_H 'SCAL' 1 &N_ELT &N_PG)) ; 
+		        		 SIG_1_gs_2_A    = SIG_1_gs_2_A    ET (PROG (EXTR SIG_1 'SI11' 1 &N_ELT &N_PG)) ;	 
+		        		 
+		                 TABLE_SORTIE.'SIG_YY_gs_2_A'. &I   = SIG_YY_gs_2_A   ;
+		        		 TABLE_SORTIE.'DEF_PLAS_gs_2_A'. &I = DEF_PLAS_gs_2_A ;
+		        		 TABLE_SORTIE.'TRIAX_gs_2_A'. &I    = TRIAX_gs_2_A    ;
+		        		 SI (GTN EGA 1) ;
+		        		     TABLE_SORTIE.'PORO_gs_2_A'. &I = PORO_gs_2_A ;
+		        		 FINSI ;
+		        		 TABLE_SORTIE.'SIG_H_gs_2_A'. &I    = SIG_H_gs_2_A ;
+		        		 TABLE_SORTIE.'SIG_1_gs_2_A'. &I    = SIG_1_gs_2_A ;
+						 
+                         SI (&I EGA P) ;						 
+*EVOLUTION DES VARIABLES INTERNES AU POINTS DE GAUSS D UN ELEMENT AU CHOIX	
+*SIGyy - Deformation plastique
+                             SIGyy_DP_2 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_2_A'.&I) 
+						                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_2_A'.&I) ; 
+*Triaxilite - Deformation plastique
+                             TRi_DP_2   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_2_A'. &I) 
+						                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_2_A'. &I) ;
+                             SI (GTN EGA 1) ;
+*Porosité - Deformation plastique
+                                 PORO_DP_2  = EVOL MANU 'PORO' (TABLE_SORTIE.'PORO_gs_2_A'. &I) 
+							                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_2_A'. &I) ; 
+*SIGyy - Porosité
+                                 SIGyy_PO_2 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_2_A'. &I) 
+							                 'PORO' (TABLE_SORTIE.'PORO_gs_2_A'. &I) ;
+*Triaxialité - Porosité 
+                                 TRi_PO_2   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_2_A'. &I) 
+							                 'PORO' (TABLE_SORTIE.'PORO_gs_2_A'. &I) ;
+                             FINSI ;
+						     
+							 OPTI SORT 'SIGyy_DP_2' ;
+                             SORT EXCE SIGyy_DP_2 ; 
+						    
+						     OPTI SORT 'TRi_DP_2' ;
+                             SORT EXCE TRi_DP_2 ;
+						    
+				             OPTI SORT 'PORO_DP_2' ;
+                             SORT EXCE PORO_DP_2 ;	
+						    
+					         OPTI SORT 'SIGyy_PO_2' ;
+                             SORT EXCE SIGyy_PO_2 ;
+						    
+				             OPTI SORT 'TRi_PO_2' ;
+                             SORT EXCE TRi_PO_2 ;	
+							 
+                         FINSI ;
+						 
+
+		           FINSI ;
+			 
+		           SI (&N_PG EGA 3) ;
+			        	 SIG_YY_gs_3_A   = SIG_YY_gs_3_A   ET (PROG (EXTR SIG_YY 'SMYY' 1 &N_ELT &N_PG)) ;
+			        	 DEF_PLAS_gs_3_A = DEF_PLAS_gs_3_A ET (PROG (EXTR EPS_PLAS 'P' 1 &N_ELT &N_PG)) ;
+			        	 TRIAX_gs_3_A    = TRIAX_gs_3_A    ET (PROG (EXTR TAUX_TRIAX 'SCAL' 1 &N_ELT &N_PG)) ;
+			        	 SI (GTN EGA 1) ;                     
+			        	     PORO_gs_3_A = PORO_gs_3_A     ET (PROG (EXTR PORO_END 'F' 1 &N_ELT &N_PG)) ;
+			        	 FINSI ;                              
+			        	 SIG_H_gs_3_A    = SIG_H_gs_3_A    ET (PROG (EXTR SIG_H 'SCAL' 1 &N_ELT &N_PG)) ; 
+			        	 SIG_1_gs_3_A    = SIG_1_gs_3_A    ET (PROG (EXTR SIG_1 'SI11' 1 &N_ELT &N_PG)) ;	 
+			        	 
+		                 TABLE_SORTIE.'SIG_YY_gs_3_A'. &I   = SIG_YY_gs_3_A   ;
+			        	 TABLE_SORTIE.'DEF_PLAS_gs_3_A'. &I = DEF_PLAS_gs_3_A ;
+			        	 TABLE_SORTIE.'TRIAX_gs_3_A'. &I    = TRIAX_gs_3_A    ;
+			        	 SI (GTN EGA 1) ;
+			        	     TABLE_SORTIE.'PORO_gs_3_A'. &I = PORO_gs_3_A ;
+			        	 FINSI ;
+			        	 TABLE_SORTIE.'SIG_H_gs_3_A'. &I    = SIG_H_gs_3_A ;
+			        	 TABLE_SORTIE.'SIG_1_gs_3_A'. &I    = SIG_1_gs_3_A ;
+
+                         SI (&I EGA P) ;						 
+*EVOLUTION DES VARIABLES INTERNES AU POINTS DE GAUSS D UN ELEMENT AU CHOIX	
+*SIGyy - Deformation plastique
+                             SIGyy_DP_3 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_3_A'.&I) 
+						                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_3_A'.&I) ; 
+*Triaxilite - Deformation plastique
+                             TRi_DP_3   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_3_A'. &I) 
+						                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_3_A'. &I) ;
+                             SI (GTN EGA 1) ;
+*Porosité - Deformation plastique
+                                 PORO_DP_3  = EVOL MANU 'PORO' (TABLE_SORTIE.'PORO_gs_3_A'. &I) 
+							                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_3_A'. &I) ; 
+*SIGyy - Porosité
+                                 SIGyy_PO_3 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_3_A'. &I) 
+							                 'PORO' (TABLE_SORTIE.'PORO_gs_3_A'. &I) ;
+*Triaxialité - Porosité 
+                                 TRi_PO_3   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_3_A'. &I) 
+							                 'PORO' (TABLE_SORTIE.'PORO_gs_3_A'. &I) ;
+                             FINSI ;
+						     
+							 OPTI SORT 'SIGyy_DP_3' ;
+                             SORT EXCE SIGyy_DP_3 ; 
+						    
+						     OPTI SORT 'TRi_DP_3' ;
+                             SORT EXCE TRi_DP_3 ;
+						    
+				             OPTI SORT 'PORO_DP_3' ;
+                             SORT EXCE PORO_DP_3 ;	
+						    
+					         OPTI SORT 'SIGyy_PO_3' ;
+                             SORT EXCE SIGyy_PO_3 ;
+						    
+				             OPTI SORT 'TRi_PO_3' ;
+                             SORT EXCE TRi_PO_3 ;	
+							 
+                         FINSI ;
+						 
+		           FINSI ;	         
+		           SI (&N_PG EGA 4) ;
+			         	 SIG_YY_gs_4_A   = SIG_YY_gs_4_A   ET (PROG (EXTR SIG_YY 'SMYY' 1 &N_ELT &N_PG)) ;
+			         	 DEF_PLAS_gs_4_A = DEF_PLAS_gs_4_A ET (PROG (EXTR EPS_PLAS 'P' 1 &N_ELT &N_PG)) ;
+			         	 TRIAX_gs_4_A    = TRIAX_gs_4_A    ET (PROG (EXTR TAUX_TRIAX 'SCAL' 1 &N_ELT &N_PG)) ;
+			         	 SI (GTN EGA 1) ;                     
+			         	     PORO_gs_4_A = PORO_gs_4_A     ET (PROG (EXTR PORO_END 'F' 1 &N_ELT &N_PG)) ;
+			         	 FINSI ;                              
+			         	 SIG_H_gs_4_A    = SIG_H_gs_4_A    ET (PROG (EXTR SIG_H 'SCAL' 1 &N_ELT &N_PG)) ; 
+			         	 SIG_1_gs_4_A    = SIG_1_gs_4_A    ET (PROG (EXTR SIG_1 'SI11' 1 &N_ELT &N_PG)) ;	 
+			         	 
+		                 TABLE_SORTIE.'SIG_YY_gs_4_A'. &I   = SIG_YY_gs_4_A   ;
+			         	 TABLE_SORTIE.'DEF_PLAS_gs_4_A'. &I = DEF_PLAS_gs_4_A ;
+			         	 TABLE_SORTIE.'TRIAX_gs_4_A'. &I    = TRIAX_gs_4_A    ;
+			         	 SI (GTN EGA 1) ;
+			         	     TABLE_SORTIE.'PORO_gs_4_A'. &I = PORO_gs_4_A ;
+			         	 FINSI ;
+			         	 TABLE_SORTIE.'SIG_H_gs_4_A'. &I    = SIG_H_gs_4_A ;
+			         	 TABLE_SORTIE.'SIG_1_gs_4_A'. &I    = SIG_1_gs_4_A ; 
+
+                         SI (&I EGA P) ;						 
+*EVOLUTION DES VARIABLES INTERNES AU POINTS DE GAUSS D UN ELEMENT AU CHOIX	
+*SIGyy - Deformation plastique
+                             SIGyy_DP_4 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_4_A'.&I) 
+						                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_4_A'.&I) ; 
+*Triaxilite - Deformation plastique
+                             TRi_DP_4   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_4_A'. &I) 
+						                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_4_A'. &I) ;
+                             SI (GTN EGA 1) ;
+*Porosité - Deformation plastique
+                                 PORO_DP_4  = EVOL MANU 'PORO' (TABLE_SORTIE.'PORO_gs_4_A'. &I) 
+							                 'DP' (TABLE_SORTIE.'DEF_PLAS_gs_4_A'. &I) ; 
+*SIGyy - Porosité
+                                 SIGyy_PO_4 = EVOL MANU 'SIGyy' (TABLE_SORTIE.'SIG_YY_gs_4_A'. &I) 
+							                 'PORO' (TABLE_SORTIE.'PORO_gs_4_A'. &I) ;
+*Triaxialité - Porosité 
+                                 TRi_PO_4   = EVOL MANU 'TRia' (TABLE_SORTIE.'TRIAX_gs_4_A'. &I) 
+							                 'PORO' (TABLE_SORTIE.'PORO_gs_4_A'. &I) ;
+                             FINSI ;
+						
+ 						     OPTI SORT 'SIGyy_DP_4' ;
+                             SORT EXCE SIGyy_DP_4 ; 
+						    
+						     OPTI SORT 'TRi_DP_4' ;
+                             SORT EXCE TRi_DP_4 ;
+						    
+				             OPTI SORT 'PORO_DP_4' ;
+                             SORT EXCE PORO_DP_4 ;	
+						    
+					         OPTI SORT 'SIGyy_PO_4' ;
+                             SORT EXCE SIGyy_PO_4 ;
+						    
+				             OPTI SORT 'TRi_PO_4' ;
+                             SORT EXCE TRi_PO_4 ;	
+							 
+                         FINSI ;
+						 
+		           FINSI ;
+				   	   
+			  FINSI ;
+		 FIN N_PG ;	
+		 SI (DIME0 EGA 3) ;
+			 N   = 9 ;
+			 N_B = 4 ;
+			 SINON ;
+			     N   = 5 ;
+				 N_B = 2 ;
+		 FINSI ;
+			 
+		 REPETER N_PG_SELEC (N_B) ;
+		     SI (BAS EGA VRAI) ;
+			     LAX     = LAX ET (PROG (EXTR L_i_VALAX (N-&N_PG_SELEC))) ;
+			     LAY     = LAY ET (PROG (EXTR L_i_VALAY (N-&N_PG_SELEC))) ; 
+			     SI (DIME0 EGA 3) ;
+			         LAZ = LAZ ET (PROG (EXTR L_i_VALAZ (N-&N_PG_SELEC))) ;
+			     FINSI ;
+			     
+			     LSIG_YY   = LSIG_YY   ET (PROG (EXTR L_i_VAL_SIG_YY (N-&N_PG_SELEC))) ;
+			     LSIG_H    = LSIG_H    ET (PROG (EXTR L_i_VAL_SIG_H (N-&N_PG_SELEC))) ;
+			     LSIG_1    = LSIG_1    ET (PROG (EXTR L_i_VAL_SIG_1 (N-&N_PG_SELEC))) ;
+			     LEPS_PLAS = LEPS_PLAS ET (PROG (EXTR L_i_VAL_EPS_PLAS (N-&N_PG_SELEC))) ;
+			     LTRIAX    = LTRIAX    ET (PROG (EXTR L_i_VAL_TRIAX (N-&N_PG_SELEC))) ;
+			     SI (GTN EGA 1) ;
+			         LPORO = LPORO     ET (PROG (EXTR L_i_VAL_PORO (N-&N_PG_SELEC))) ;
+			     FINSI ;
+			     
+				 SINON ;
+				     LAX     = LAX ET (PROG (EXTR L_i_VALAX (&N_PG_SELEC))) ;
+					 LAY     = LAY ET (PROG (EXTR L_i_VALAY (&N_PG_SELEC))) ; 
+					 SI (DIME0 EGA 3) ;
+					     LAZ = LAZ ET (PROG (EXTR L_i_VALAZ (&N_PG_SELEC))) ;
+					 FINSI ;
+					 
+					 LSIG_YY   = LSIG_YY   ET (PROG (EXTR L_i_VAL_SIG_YY (&N_PG_SELEC))) ;
+					 LSIG_H    = LSIG_H    ET (PROG (EXTR L_i_VAL_SIG_H (&N_PG_SELEC))) ;
+					 LSIG_1    = LSIG_1    ET (PROG (EXTR L_i_VAL_SIG_1 (&N_PG_SELEC))) ;
+					 LEPS_PLAS = LEPS_PLAS ET (PROG (EXTR L_i_VAL_EPS_PLAS (&N_PG_SELEC))) ;
+					 LTRIAX    = LTRIAX    ET (PROG (EXTR L_i_VAL_TRIAX (&N_PG_SELEC))) ;
+					 SI (GTN EGA 1) ;
+					     LPORO = LPORO     ET (PROG (EXTR L_i_VAL_PORO (&N_PG_SELEC))) ;
+					 FINSI ;
+			 FINSI ;		 
+			 SI (DIME0 EGA 3) ;
+			     P_GAUSS_SELEC2     = POINT LAX LAY LAZ COUL 'BLEU' ;
+				 SINON ;
+				     P_GAUSS_SELEC2 = POINT LAX LAY COUL 'BLEU' ;
+			 FINSI ;
+*    		 TRACE (ELT_LIGA ET (P_LIGA COUL 'ROUGE') ET P_GAUSS_SELEC2) ;
+				 
+		 FIN N_PG_SELEC ;
+			 
+	 FIN N_ELT ;
+	 MESS 'Daryl';
+	 SI(DIME0 EGA 2) ;
+         P_GAUSS_SELEC = POINT LAX LAY COUL 'BLEU' ;
+         SINON ; 
+             P_GAUSS_SELEC = POINT LAX LAY LAZ COUL 'BLEU' ;
+	 FINSI ;
+*    TRACE (ELT_LIGA ET (P_LIGA COUL 'ROUGE') ET P_GAUSS_SELEC) ;		  			 	 
+
+     TABLE_SORTIE.'SIG_H'.&I    = LSIG_H ;
+     TABLE_SORTIE.'SIG_1'.&I    = LSIG_1 ;
+	 TABLE_SORTIE.'DEF_PLAS'.&I = LEPS_PLAS ;
+	 TABLE_SORTIE.'TRIAX'.&I    = LTRIAX ;
+	 SI (GTN EGA 1) ;
+	     TABLE_SORTIE.'PORO'.&I = LPORO ;
+	 FINSI ;
+	 TABLE_SORTIE.'SIG_YY'.&I   = LSIG_YY ;
+	 TABLE_SORTIE.'COOR_X'.&I   = LAX ;
+
+	 SI (DIME0 EGA 3);
+	     TABLE_SORTIE.'COOR_Z'.&I = LAZ ;
+	 FINSI ;
+		 
+FIN I ;
+
+*SORTIE EXCEL DES CHAMPS AUX POINTS DE GAUSS SUR LE LIGAMENT
+OPTI SORT 'SIG_H' ;
+SORT EXCE TABLE_SORTIE.'SIG_H' ; 
+
+OPTI SORT 'SIG_1' ;
+SORT EXCE TABLE_SORTIE.'SIG_1' ;   
+
+OPTI SORT 'DEF_PLAS' ;
+SORT EXCE TABLE_SORTIE.'DEF_PLAS' ;
+
+OPTI SORT 'TRIAX' ;
+SORT EXCE TABLE_SORTIE.'TRIAX' ;   
+
+SI (GTN EGA 1) ;
+     OPTI SORT 'PORO' ;
+     SORT EXCE TABLE_SORTIE.'PORO' ;    
+FINSI ;
+
+OPTI SORT 'SIG_YY' ;
+SORT EXCE TABLE_SORTIE.'SIG_YY' ; 
+
+OPTI SORT 'COOR_X' ;
+SORT EXCE TABLE_SORTIE.'COOR_X' ; 
+
+SI ( DIME0 EGA 3) ;
+     OPTI SORT 'COOR_Z' ;
+     SORT EXCE TABLE_SORTIE.'COOR_Z' ;
+FINSI ;
+
+*SORTIE EXCEL DES CHAMPS AUX POINTS DE GAUSS DANS UN ELEMENT
+OPTI SORT 'SIG_YY_gs_1_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_YY_gs_1_A' ;
+
+OPTI SORT 'SIG_YY_gs_2_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_YY_gs_2_A' ;
+
+OPTI SORT 'SIG_YY_gs_3_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_YY_gs_3_A' ;
+
+OPTI SORT 'SIG_YY_gs_4_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_YY_gs_4_A' ;
+
+OPTI SORT 'DEF_PLAS_gs_1_A' ;
+SORT EXCE TABLE_SORTIE.'DEF_PLAS_gs_1_A' ;
+
+OPTI SORT 'DEF_PLAS_gs_2_A' ;
+SORT EXCE TABLE_SORTIE.'DEF_PLAS_gs_2_A' ;
+
+OPTI SORT 'DEF_PLAS_gs_3_A' ;
+SORT EXCE TABLE_SORTIE.'DEF_PLAS_gs_3_A' ;
+
+OPTI SORT 'DEF_PLAS_gs_4_A' ;
+SORT EXCE TABLE_SORTIE.'DEF_PLAS_gs_4_A' ;
+ 
+OPTI SORT 'TRIAX_gs_1_A' ;
+SORT EXCE TABLE_SORTIE.'TRIAX_gs_1_A' ;
+
+OPTI SORT 'TRIAX_gs_2_A' ;
+SORT EXCE TABLE_SORTIE.'TRIAX_gs_2_A' ; 
+
+OPTI SORT 'TRIAX_gs_3_A' ;
+SORT EXCE TABLE_SORTIE.'TRIAX_gs_3_A' ; 
+
+OPTI SORT 'TRIAX_gs_4_A' ;
+SORT EXCE TABLE_SORTIE.'TRIAX_gs_4_A' ; 
+ 
+SI (GTN EGA 1) ;
+     OPTI SORT 'PORO_gs_1_A' ;
+     SORT EXCE TABLE_SORTIE.'PORO_gs_1_A' ;
+     
+     OPTI SORT 'PORO_gs_2_A' ;
+     SORT EXCE TABLE_SORTIE.'PORO_gs_2_A' ;
+     
+     OPTI SORT 'PORO_gs_3_A' ;
+     SORT EXCE TABLE_SORTIE.'PORO_gs_3_A' ;
+     
+     OPTI SORT 'PORO_gs_4_A' ;
+     SORT EXCE TABLE_SORTIE.'PORO_gs_4_A' ;
+FINSI ;
+ 
+OPTI SORT 'SIG_H_gs_1_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_H_gs_1_A' ;
+
+OPTI SORT 'SIG_H_gs_2_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_H_gs_2_A' ;
+
+OPTI SORT 'SIG_H_gs_3_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_H_gs_3_A' ;
+
+OPTI SORT 'SIG_H_gs_4_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_H_gs_4_A' ;
+ 
+OPTI SORT 'SIG_1_gs_1_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_1_gs_1_A' ;
+
+OPTI SORT 'SIG_1_gs_2_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_1_gs_2_A' ;
+
+OPTI SORT 'SIG_1_gs_3_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_1_gs_3_A' ;
+
+OPTI SORT 'SIG_1_gs_4_A' ;
+SORT EXCE TABLE_SORTIE.'SIG_1_gs_4_A' ;
+
+*EVOLUTIONS DES LA FORCE - DEPLACEMENT 
+F_CMOD = EVOL MANU 'FLECHE' LDEPL 'FORCE' LFORC ;
+
+OPTI SORT 'F_CMOD' ;
+SORT EXCE F_CMOD ;
+
+
+
+
+

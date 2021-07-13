@@ -1,0 +1,698 @@
+*PROCEDURE VisuPG   - version 7 - 2021/04/26
+$$$$ VISUPG
+'DEBPROC' VisuPG ;
+  'ARGUMENT' e_modl*'MMODEL' e_chml/'MCHAML' ;
+
+  'MESS' ;
+  'MESS' 'Procedure VISUPG version 7 :' ;
+
+  s_tabm = 'TABLE' '_VISUPG_' ;
+  b_tabl = FAUX ;
+  b_chpu = FAUX ;
+  b_titr = FAUX ;
+  b_isov = FAUX ;
+  b_chmu = 'EXISTE' e_chml ;
+
+  'SI' b_chmu ;
+    'ARGUMENT' e_comp*'MOT' ;
+    'ARGUMENT' e_tabm/'TABLE' e_chpu/'CHPOINT' e_titr/'MOT' e_isov/'LISTREEL' ;
+
+* Verification que la composante a analyser est bien dans le champ :
+    lm_z = 'EXTRAIRE' e_chml 'COMP' ;
+    'SI' ('NON' ('EXISTE' lm_z e_comp)) ;
+      str_z = 'CHAINE' 'La composante "' e_comp '" n existe pas !' ;
+      'ERREUR' str_z ;
+      'QUITTER' VisuPG ;
+    'FINSI' ;
+
+'MESS' '  Le champ est suppose etre donne au STRESSES...' ;
+'MESS' '  En cas du support du champ autre (GRAVITE ou NOEUDS ou MASSE) ' ;
+'MESS' '  -> RISQUE D ERREUR Mais AUCUNE verification n est faite actuellement !!!' ;
+'MESS' ;
+
+    'SI' ('EXISTE' e_tabm) ;
+      'SI' ('EXISTE' e_tabm 'SOUSTYPE') ;
+        'SI' ('EGA' e_tabm.'SOUSTYPE' '_VISUPG_') ;
+          'SI' ('EXISTE' e_tabm '_MODELE_') ;
+            b_tabl = 'EGA' e_modl (e_tabm.'_MODELE_') ;
+          'FINS' ;
+          s_tabm = e_tabm ;
+        'FINS' ;
+      'FINS' ;
+    'FINSI' ;
+    b_chpu = 'EXISTE' e_chpu ;
+    b_titr = 'EXISTE' e_titr ;
+    b_isov = 'EXISTE' e_isov ;
+  'FINSI' ;
+
+* Construction de la table de visualisation :
+* Cette table pourra etre utilisee lors d'un prochain appel !
+* Attention en cas de visualisation sur maillage deforme, il faut
+* s'assurer que les maillages suivent bien la deformation !
+  'SI' ('NON' b_tabl) ;
+    tab_z = 'EXTRAIRE' e_modl 'ZONE' ;
+    n_z = ('DIMENSION' tab_z) / 2 ;
+
+    s_tabm.'_MODELE_' = e_modl ;
+    s_tabm.'_MAILLAGE_' = 'EXTRAIRE' e_modl 'MAIL' ;
+    s_tabm.'_NBZONES_'  = n_z ;
+
+    s_tabm.'_MODL_VISU_' = s_tabm.'_MODELE_' ;
+    s_tabm.'_MAIL_VISU_' = s_tabm.'_MAILLAGE_' ;
+    s_tabm.'_GEO0_VISU_' = 'MOT' '__VIDE__' ;
+    s_tabm.'_RIGA_VISU_' = 'MOT' '__VIDE__' ;
+    s_tabm.'_DEPL_VISU_' = 'MOT' '__VIDE__' ;
+
+    i_z1 = 0 ; n_z1 = 0 ; n_z2 = 0 ;
+    modl_z = 'VIDE' 'MMODEL' ;
+    mail_z = 'VIDE' 'MAILLAGE' ;
+    riga_z = 'VIDE' 'RIGIDITE'/'RIGIDITE' ;
+    'REPETER' Bouc1 n_z ;
+      tab_z1 = 'TABLE' ;
+      s_tabm. &Bouc1 = tab_z1 ;
+
+      i_z1 = i_z1 + 2 ;
+      mail_1 = tab_z. i_z1 ;
+      modl_1 = tab_z. (i_z1 - 1) ;
+
+      mot_z = 'EXTRAIRE' ('ELEM' mail_1 'TYPE') 1 ;
+      i_z = 'NBEL' mail_1 ;
+      tab_z1.'_ELEMENT_' = mot_z ;
+      tab_z1.'_MAIL_' = mail_1 ;
+      tab_z1.'_NBEL_' = i_z ;
+      tab_z1.'_VISU_' = 'MOT' '__IDEM__' ;
+      tab_z1.'_NBPG_' = 0 ;
+'MESS' '  Traitement Modele' ' ' &Bouc1 ' Element' ' ' mot_z ' :' ;
+
+      ele_z1 = 'ELEMENT' mail_1 1 ;
+      mod_z1 = 'REDU' modl_1 ele_z1 ;
+      cha_z1 = 'ZERO' mod_z1 'STRESSES' ;
+      cha_z1 = 'CHANGER' 'CHPO' cha_z1 mod_z1 'SUPP' ;
+      ele_z1 = 'EXTRAIRE' cha_z1 'MAIL' ;
+      nbpg_1 = 'NBNO' ele_z1 ;
+'MESS' '  Nombre de PG pour support STRESSES' ' ' nbpg_1 ;
+
+      mail_2 = mail_1 ;
+      modl_2 = modl_1 ;
+      b_z1 = VRAI ; b_z2 = FAUX ;
+*** "SEG2" (1D) :
+      'SI' ('EGA' mot_z 'SEG2') ;
+        IDIM1 = 'EGA' ('VALE' 'DIME') 1 ;
+        'SI' (('EGA' nbpg_1 1) 'ET' IDIM1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' (('EGA' nbpg_1 2) 'ET' IDIM1) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'SEG2' ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1 1 &Bouc2 ;
+            pt2 = 'POINT' mail_1 2 &Bouc2 ;
+            ptG = 0.5 '*' (pt1 'PLUS' pt2) ;
+            elt_2 = ('MANU' 'SEG2' pt1 ptG) 'ET' ('MANU' 'SEG2' ptG pt2) ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "SEG3" (1D) :
+      'SI' ('EGA' mot_z 'SEG3') ;
+        IDIM1 = 'EGA' ('VALE' 'DIME') 1 ;
+        'SI' (('EGA' nbpg_1 1) 'ET' IDIM1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' (('EGA' nbpg_1 2) 'ET' IDIM1) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'SEG2' ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1 1 &Bouc2 ;
+            pt2 = 'POINT' mail_1 2 &Bouc2 ;
+            ptG = 'POINT' mail_1 3 &Bouc2 ;
+            elt_2 = ('MANU' 'SEG2' pt1 ptG) 'ET' ('MANU' 'SEG2' ptG pt2) ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ; 'SI' (('EGA' nbpg_1 3) 'ET' IDIM1) ;
+          p8s9 = +8. / 9. ; p2s9 = +2. / 9. ; m1s9 = -1. / 9. ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'SEG2' ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1 1 &Bouc2 ;
+            pt4 = 'POINT' mail_1 2 &Bouc2 ;
+            ptG = 'POINT' mail_1 3 &Bouc2 ;
+            pt2 = (p2s9 '*' pt1) 'PLUS' (p8s9 '*' ptG) 'PLUS' (m1s9 '*' pt4) ;
+            pt3 = (p2s9 '*' pt4) 'PLUS' (p8s9 '*' ptG) 'PLUS' (m1s9 '*' pt1) ;
+            elt_2 = ('MANU' 'SEG2' pt1 pt2) 'ET' ('MANU' 'SEG2' pt2 pt3) 'ET'
+                    ('MANU' 'SEG2' pt3 pt4) ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "TRI3" / "TET4" :
+      'SI' (('EGA' mot_z 'TRI3') 'OU'
+            ('EGA' mot_z 'TET4')) ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ;
+      'FINSI' ;
+*** "QUA4" :
+      'SI' ('EGA' mot_z 'QUA4') ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 4) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'QUA4' ;
+          mail_1q = 'CHANGER' 'QUADRATIQUE' mail_1 ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1q 1 &Bouc2 ;
+            pt2 = 'POINT' mail_1q 3 &Bouc2 ;
+            pt3 = 'POINT' mail_1q 5 &Bouc2 ;
+            pt4 = 'POINT' mail_1q 7 &Bouc2 ;
+            pt12 = 'POINT' mail_1q 2 &Bouc2 ;
+            pt23 = 'POINT' mail_1q 4 &Bouc2 ;
+            pt34 = 'POINT' mail_1q 6 &Bouc2 ;
+            pt41 = 'POINT' mail_1q 8 &Bouc2 ;
+            ptG = 0.5 '*' (pt12 'PLUS' pt34) ;
+            elt_2 = ('MANU' 'QUA4' pt1 pt12 ptG pt41) 'ET'
+                    ('MANU' 'QUA4' pt12 pt2 pt23 ptG) 'ET'
+                    ('MANU' 'QUA4' ptG pt23 pt3 pt34) 'ET'
+                    ('MANU' 'QUA4' pt41 ptG pt34 pt4) ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "TRI6" sauf en AXIS pour l'instant :
+      'SI' ('EGA' mot_z 'TRI6') ;
+       'SI' ('NEG' ('VALE' 'MODE') 'AXIS') ;
+        mail_2 = 'VIDE' 'MAILLAGE'/'TRI3' ;
+        'REPETER' Bouc2 i_z ;
+          pt1 = 'POINT' mail_1 1 &Bouc2 ;
+          pt2 = 'POINT' mail_1 2 &Bouc2 ;
+          pt3 = 'POINT' mail_1 3 &Bouc2 ;
+          pt4 = 'POINT' mail_1 4 &Bouc2 ;
+          pt5 = 'POINT' mail_1 5 &Bouc2 ;
+          pt6 = 'POINT' mail_1 6 &Bouc2 ;
+          elt_2 = ('MANU' 'TRI3' pt2 pt4 pt6) 'ET'
+                  ('MANU' 'TRI3' pt1 pt2 pt6) 'ET'
+                  ('MANU' 'TRI3' pt2 pt3 pt4) 'ET'
+                  ('MANU' 'TRI3' pt4 pt5 pt6) ;
+          mail_2 = mail_2 'ET' elt_2 ;
+        'FIN' Bouc2 ;
+        'ELIM' mail_2 1.E-9 ;
+        tab_z1.'_VISU_' = mail_2 ;
+        modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+        tab_z1.'_NBPG_' = 4 ;
+        b_z1 = FAUX ; n_z1 = n_z1 + 1 ;
+       'FINSI' ;
+      'FINSI' ;
+*** "QUA8" :
+      'SI' ('EGA' mot_z 'QUA8') ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 4) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'QUA4' ;
+          'REPETER' Bouc2 i_z ;
+            pt1  = 'POINT' mail_1 1 &Bouc2 ;
+            pt2  = 'POINT' mail_1 3 &Bouc2 ;
+            pt3  = 'POINT' mail_1 5 &Bouc2 ;
+            pt4  = 'POINT' mail_1 7 &Bouc2 ;
+            pt12 = 'POINT' mail_1 2 &Bouc2 ;
+            pt23 = 'POINT' mail_1 4 &Bouc2 ;
+            pt34 = 'POINT' mail_1 6 &Bouc2 ;
+            pt41 = 'POINT' mail_1 8 &Bouc2 ;
+            ptG  = 0.5 '*' (pt12 'PLUS' pt34) ;
+            elt_2 = ('MANU' 'QUA4' pt1 pt12 ptG pt41) 'ET'
+                    ('MANU' 'QUA4' pt12 pt2 pt23 ptG) 'ET'
+                    ('MANU' 'QUA4' ptG pt23 pt3 pt34) 'ET'
+                    ('MANU' 'QUA4' pt41 ptG pt34 pt4) ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 9) ;
+          IDIM3 = 'EGA' ('VALE' 'DIME') 3 ;
+          pus3 = 1. / 3. ; nus3 = -1. / 3. ;
+          lr_qsi = 'PROG' -1. nus3 pus3 +1. -1. nus3 pus3 +1.
+                          -1. nus3 pus3 +1. -1. nus3 pus3 +1. ;
+          lr_eta = 'PROG' 4 '*' -1. 4 '*' nus3 4 '*' pus3 4 '*' +1. ;
+          lrN = 'TABLE' ;
+          'REPETER' Bouc2 8 ;
+            lrN. &Bouc2 = 'TABLE' ;
+          'FIN' Bouc2 ;
+          'REPETER' Bouc2 16 ;
+            r1 = 'EXTRAIRE' lr_qsi &Bouc2 ;
+            r1m1 = 1. - r1 ;  r1p1 = 1. + r1 ;
+            r2 = 'EXTRAIRE' lr_eta &Bouc2 ;
+            r2m1 = 1. - r2 ;  r2p1 = 1. + r2 ;
+            lrN. 1 . &Bouc2 = 0.25 * (r1m1 * r2m1 * (-1. - r1 - r2)) ;
+            lrN. 3 . &Bouc2 = 0.25 * (r1p1 * r2m1 * (-1. + r1 - r2)) ;
+            lrN. 5 . &Bouc2 = 0.25 * (r1p1 * r2p1 * (-1. + r1 + r2)) ;
+            lrN. 7 . &Bouc2 = 0.25 * (r1m1 * r2p1 * (-1. - r1 + r2)) ;
+            lrN. 2 . &Bouc2 = 0.50 * (r1m1 * r1p1 * r2m1) ;
+            lrN. 4 . &Bouc2 = 0.50 * (r1p1 * r2p1 * r2m1) ;
+            lrN. 6 . &Bouc2 = 0.50 * (r1m1 * r1p1 * r2p1) ;
+            lrN. 8 . &Bouc2 = 0.50 * (r1m1 * r2p1 * r2m1) ;
+          'FIN' Bouc2 ;
+          tpt = 'TABLE' ;
+          eptX = 'TABLE' ; eptY = 'TABLE' ; eptZ = 'TABLE' ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'QUA4' ;
+          'REPETER' Bouc2 i_z ;
+            'REPETER' Bouc3 8 ;
+              pt_z = 'POINT' mail_1 &Bouc3 &Bouc2 ;
+              eptX. &Bouc3 = 'COORD' 1 pt_z ;
+              eptY. &Bouc3 = 'COORD' 2 pt_z ;
+              'SI' IDIM3 ;
+                eptZ. &Bouc3 = 'COORD' 3 pt_z ;
+              'SINON' ;
+                eptZ. &Bouc3 = 0. ;
+              'FINSI' ;
+            'FIN' Bouc3 ;
+            'REPETER' Bouc3 16 ;
+              'SI' ('EGA' &Bouc3 1) ;
+                tpt. &Bouc3 = 'POINT' mail_1 1 &Bouc2 ;
+                'ITERER' Bouc3 ;
+              'FINSI' ;
+              'SI' ('EGA' &Bouc3 4) ;
+                tpt. &Bouc3 = 'POINT' mail_1 3 &Bouc2 ;
+                'ITERER' Bouc3 ;
+              'FINSI' ;
+              'SI' ('EGA' &Bouc3 13) ;
+                tpt. &Bouc3 = 'POINT' mail_1 7 &Bouc2 ;
+                'ITERER' Bouc3 ;
+              'FINSI' ;
+              'SI' ('EGA' &Bouc3 16) ;
+                tpt. &Bouc3 = 'POINT' mail_1 5 &Bouc2 ;
+                'ITERER' Bouc3 ;
+              'FINSI' ;
+              xpt_z = 0. ; ypt_z = 0. ; zpt_z = 0. ;
+              'REPETER' Bouc4 8 ;
+                r_z = lrN. &Bouc4 . &Bouc3 ;
+                xpt_z = xpt_z '+' (r_z '*' eptX. &Bouc4) ;
+                ypt_z = ypt_z '+' (r_z '*' eptY. &Bouc4) ;
+                zpt_z = zpt_z '+' (r_z '*' eptZ. &Bouc4) ;
+              'FIN' Bouc4 ;
+              'SI' IDIM3 ;
+                tpt. &Bouc3 = 'POIN' xpt_z ypt_z zpt_z ;
+              'SINON' ;
+                tpt. &Bouc3 = 'POIN' xpt_z ypt_z ;
+              'FINSI' ;
+            'FIN' Bouc3 ;
+            elt_2 = 'VIDE' 'MAILLAGE'/'QUA4' ;
+            i_z2 = 0 ;
+            'REPETER' Bouc3 9 ;
+              i_z2 = i_z2 + 1 ;
+              pt1 = tpt. i_z2       ; pt2 = tpt. (i_z2 + 1) ;
+              pt3 = tpt. (i_z2 + 5) ; pt4 = tpt. (i_z2 + 4) ;
+              elt_2 = elt_2 'ET' ('MANU' 'QUA4' pt1 pt2 pt3 pt4) ;
+              'SI' ('MULT' &Bouc3 3) ; i_z2 = i_z2 + 1 ; 'FINSI' ;
+            'FIN' Bouc3 ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'OUBLIER' eptX ; 'OUBLIER' eptY ; 'OUBLIER' eptZ ;
+          'OUBLIER' lrN ; 'OUBLIER' tpt ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = 9 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "CUB8" :
+      'SI' ('EGA' mot_z 'CUB8') ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 8) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'CUB8' ;
+          mail_1q = 'CHANGER' 'QUADRATIQUE' mail_1 ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1q  1 &Bouc2 ;
+            pt2 = 'POINT' mail_1q  3 &Bouc2 ;
+            pt3 = 'POINT' mail_1q  5 &Bouc2 ;
+            pt4 = 'POINT' mail_1q  7 &Bouc2 ;
+            pt5 = 'POINT' mail_1q 13 &Bouc2 ;
+            pt6 = 'POINT' mail_1q 15 &Bouc2 ;
+            pt7 = 'POINT' mail_1q 17 &Bouc2 ;
+            pt8 = 'POINT' mail_1q 19 &Bouc2 ;
+            pt12 = 'POINT' mail_1q  2 &Bouc2 ;
+            pt23 = 'POINT' mail_1q  4 &Bouc2 ;
+            pt34 = 'POINT' mail_1q  6 &Bouc2 ;
+            pt41 = 'POINT' mail_1q  8 &Bouc2 ;
+            pt56 = 'POINT' mail_1q 14 &Bouc2 ;
+            pt67 = 'POINT' mail_1q 16 &Bouc2 ;
+            pt78 = 'POINT' mail_1q 18 &Bouc2 ;
+            pt85 = 'POINT' mail_1q 20 &Bouc2 ;
+            pt15 = 'POINT' mail_1q  9 &Bouc2 ;
+            pt26 = 'POINT' mail_1q 10 &Bouc2 ;
+            pt37 = 'POINT' mail_1q 11 &Bouc2 ;
+            pt48 = 'POINT' mail_1q 12 &Bouc2 ;
+            ptF1 = 0.5 '*' (pt12 'PLUS' pt34) ;
+            ptF2 = 0.5 '*' (pt12 'PLUS' pt56) ;
+            ptF3 = 0.5 '*' (pt23 'PLUS' pt67) ;
+            ptF4 = 0.5 '*' (pt34 'PLUS' pt78) ;
+            ptF5 = 0.5 '*' (pt41 'PLUS' pt85) ;
+            ptF6 = 0.5 '*' (pt56 'PLUS' pt78) ;
+            ptG  = 0.5 '*' (ptF1 'PLUS' ptF6) ;
+            elt_2 = ('MANU' 'CUB8' pt1 pt12 ptF1 pt41 pt15 ptF2 ptG ptF5)
+               'ET' ('MANU' 'CUB8' pt12 pt2 pt23 ptF1 ptF2 pt26 ptF3 ptG)
+               'ET' ('MANU' 'CUB8' ptF1 pt23 pt3 pt34 ptG ptF3 pt37 ptF4)
+               'ET' ('MANU' 'CUB8' pt41 ptF1 pt34 pt4 ptF5 ptG ptF4 pt48)
+               'ET' ('MANU' 'CUB8' pt15 ptF2 ptG ptF5 pt5 pt56 ptF6 pt85)
+               'ET' ('MANU' 'CUB8' ptF2 pt26 ptF3 ptG pt56 pt6 pt67 ptF6)
+               'ET' ('MANU' 'CUB8' ptG ptF3 pt37 ptF4 ptF6 pt67 pt7 pt78)
+               'ET' ('MANU' 'CUB8' ptF5 ptG ptF4 pt48 pt85 ptF6 pt78 pt8);
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "PRI6" :
+      'SI' ('EGA' mot_z 'PRI6') ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 2) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'PRI6' ;
+          mail_1q = 'CHANGER' 'QUADRATIQUE' mail_1 ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1q  1 &Bouc2 ;
+            pt2 = 'POINT' mail_1q  3 &Bouc2 ;
+            pt3 = 'POINT' mail_1q  5 &Bouc2 ;
+            pt4 = 'POINT' mail_1q 10 &Bouc2 ;
+            pt5 = 'POINT' mail_1q 12 &Bouc2 ;
+            pt6 = 'POINT' mail_1q 14 &Bouc2 ;
+            pt14 = 'POINT' mail_1q  7 &Bouc2 ;
+            pt25 = 'POINT' mail_1q  8 &Bouc2 ;
+            pt36 = 'POINT' mail_1q  9 &Bouc2 ;
+            elt_2 = ('MANU' 'PRI6' pt1 pt2 pt3 pt14 pt25 pt36) 'ET'
+                    ('MANU' 'PRI6' pt14 pt25 pt36 pt4 pt5 pt6) ;
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 6) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'CUB8' ;
+          mail_1q = 'CHANGER' 'QUADRATIQUE' mail_1 ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1q  1 &Bouc2 ;
+            pt2 = 'POINT' mail_1q  3 &Bouc2 ;
+            pt3 = 'POINT' mail_1q  5 &Bouc2 ;
+            pt4 = 'POINT' mail_1q 10 &Bouc2 ;
+            pt5 = 'POINT' mail_1q 12 &Bouc2 ;
+            pt6 = 'POINT' mail_1q 14 &Bouc2 ;
+            pt12 = 'POINT' mail_1q 2 &Bouc2 ;
+            pt23 = 'POINT' mail_1q 4 &Bouc2 ;
+            pt31 = 'POINT' mail_1q 6 &Bouc2 ;
+            pt45 = 'POINT' mail_1q 11 &Bouc2 ;
+            pt56 = 'POINT' mail_1q 13 &Bouc2 ;
+            pt64 = 'POINT' mail_1q 15 &Bouc2 ;
+            pt14 = 'POINT' mail_1q  7 &Bouc2 ;
+            pt25 = 'POINT' mail_1q  8 &Bouc2 ;
+            pt36 = 'POINT' mail_1q  9 &Bouc2 ;
+            ptF1 = 0.5 '*' (pt12 'PLUS' pt45) ;
+            ptF2 = 0.5 '*' (pt23 'PLUS' pt56) ;
+            ptF3 = 0.5 '*' (pt31 'PLUS' pt64) ;
+            ptFB = (pt1 'PLUS' pt2 'PLUS' pt3) '/' 3. ;
+            ptFH = (pt4 'PLUS' pt5 'PLUS' pt6) '/' 3. ;
+            ptG  = 0.5 '*' (ptFB 'PLUS' ptFH) ;
+            elt_2 = ('MANU' 'CUB8' pt1 pt12 ptFB pt31 pt14 ptF1 ptG ptF3)
+               'ET' ('MANU' 'CUB8' pt12 pt2 pt23 ptFB ptF1 pt25 ptF2 ptG)
+               'ET' ('MANU' 'CUB8' ptFB pt23 pt3 pt31 ptG ptF2 pt36 ptF3)
+               'ET' ('MANU' 'CUB8' pt14 ptF1 ptG ptF3 pt4 pt45 ptFH pt64)
+               'ET' ('MANU' 'CUB8' ptF1 pt25 ptF2 ptG pt45 pt5 pt56 ptFH)
+               'ET' ('MANU' 'CUB8' ptG ptF2 pt36 ptF3 ptFH pt56 pt6 pt64);
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "CU20" :
+      'SI' ('EGA' mot_z 'CU20') ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 8) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'CUB8' ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1  1 &Bouc2 ;
+            pt2 = 'POINT' mail_1  3 &Bouc2 ;
+            pt3 = 'POINT' mail_1  5 &Bouc2 ;
+            pt4 = 'POINT' mail_1  7 &Bouc2 ;
+            pt5 = 'POINT' mail_1 13 &Bouc2 ;
+            pt6 = 'POINT' mail_1 15 &Bouc2 ;
+            pt7 = 'POINT' mail_1 17 &Bouc2 ;
+            pt8 = 'POINT' mail_1 19 &Bouc2 ;
+            pt12 = 'POINT' mail_1  2 &Bouc2 ;
+            pt23 = 'POINT' mail_1  4 &Bouc2 ;
+            pt34 = 'POINT' mail_1  6 &Bouc2 ;
+            pt41 = 'POINT' mail_1  8 &Bouc2 ;
+            pt56 = 'POINT' mail_1 14 &Bouc2 ;
+            pt67 = 'POINT' mail_1 16 &Bouc2 ;
+            pt78 = 'POINT' mail_1 18 &Bouc2 ;
+            pt85 = 'POINT' mail_1 20 &Bouc2 ;
+            pt15 = 'POINT' mail_1  9 &Bouc2 ;
+            pt26 = 'POINT' mail_1 10 &Bouc2 ;
+            pt37 = 'POINT' mail_1 11 &Bouc2 ;
+            pt48 = 'POINT' mail_1 12 &Bouc2 ;
+            ptF1 = 0.5 '*' (pt12 'PLUS' pt34) ;
+            ptF2 = 0.5 '*' (pt12 'PLUS' pt56) ;
+            ptF3 = 0.5 '*' (pt23 'PLUS' pt67) ;
+            ptF4 = 0.5 '*' (pt34 'PLUS' pt78) ;
+            ptF5 = 0.5 '*' (pt41 'PLUS' pt85) ;
+            ptF6 = 0.5 '*' (pt56 'PLUS' pt78) ;
+            ptG  = 0.5 '*' (ptF1 'PLUS' ptF6) ;
+            elt_2 = ('MANU' 'CUB8' pt1 pt12 ptF1 pt41 pt15 ptF2 ptG ptF5)
+               'ET' ('MANU' 'CUB8' pt12 pt2 pt23 ptF1 ptF2 pt26 ptF3 ptG)
+               'ET' ('MANU' 'CUB8' ptF1 pt23 pt3 pt34 ptG ptF3 pt37 ptF4)
+               'ET' ('MANU' 'CUB8' pt41 ptF1 pt34 pt4 ptF5 ptG ptF4 pt48)
+               'ET' ('MANU' 'CUB8' pt15 ptF2 ptG ptF5 pt5 pt56 ptF6 pt85)
+               'ET' ('MANU' 'CUB8' ptF2 pt26 ptF3 ptG pt56 pt6 pt67 ptF6)
+               'ET' ('MANU' 'CUB8' ptG ptF3 pt37 ptF4 ptF6 pt67 pt7 pt78)
+               'ET' ('MANU' 'CUB8' ptF5 ptG ptF4 pt48 pt85 ptF6 pt78 pt8);
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+*** "PR15" :
+      'SI' ('EGA' mot_z 'PR15') ;
+        'SI' ('EGA' nbpg_1 1) ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ;
+        'SINON' ; 'SI' ('EGA' nbpg_1 6) ;
+          mail_2 = 'VIDE' 'MAILLAGE'/'CUB8' ;
+          'REPETER' Bouc2 i_z ;
+            pt1 = 'POINT' mail_1  1 &Bouc2 ;
+            pt2 = 'POINT' mail_1  3 &Bouc2 ;
+            pt3 = 'POINT' mail_1  5 &Bouc2 ;
+            pt4 = 'POINT' mail_1 10 &Bouc2 ;
+            pt5 = 'POINT' mail_1 12 &Bouc2 ;
+            pt6 = 'POINT' mail_1 14 &Bouc2 ;
+            pt12 = 'POINT' mail_1 2 &Bouc2 ;
+            pt23 = 'POINT' mail_1 4 &Bouc2 ;
+            pt31 = 'POINT' mail_1 6 &Bouc2 ;
+            pt45 = 'POINT' mail_1 11 &Bouc2 ;
+            pt56 = 'POINT' mail_1 13 &Bouc2 ;
+            pt64 = 'POINT' mail_1 15 &Bouc2 ;
+            pt14 = 'POINT' mail_1  7 &Bouc2 ;
+            pt25 = 'POINT' mail_1  8 &Bouc2 ;
+            pt36 = 'POINT' mail_1  9 &Bouc2 ;
+            ptF1 = 0.5 '*' (pt12 'PLUS' pt45) ;
+            ptF2 = 0.5 '*' (pt23 'PLUS' pt56) ;
+            ptF3 = 0.5 '*' (pt31 'PLUS' pt64) ;
+            ptFB = (pt1 'PLUS' pt2 'PLUS' pt3) '/' 3. ;
+            ptFH = (pt4 'PLUS' pt5 'PLUS' pt6) '/' 3. ;
+            ptG  = 0.5 '*' (ptFB 'PLUS' ptFH) ;
+            elt_2 = ('MANU' 'CUB8' pt1 pt12 ptFB pt31 pt14 ptF1 ptG ptF3)
+               'ET' ('MANU' 'CUB8' pt12 pt2 pt23 ptFB ptF1 pt25 ptF2 ptG)
+               'ET' ('MANU' 'CUB8' ptFB pt23 pt3 pt31 ptG ptF2 pt36 ptF3)
+               'ET' ('MANU' 'CUB8' pt14 ptF1 ptG ptF3 pt4 pt45 ptFH pt64)
+               'ET' ('MANU' 'CUB8' ptF1 pt25 ptF2 ptG pt45 pt5 pt56 ptFH)
+               'ET' ('MANU' 'CUB8' ptG ptF2 pt36 ptF3 ptFH pt56 pt6 pt64);
+            mail_2 = mail_2 'ET' elt_2 ;
+          'FIN' Bouc2 ;
+          'ELIM' mail_2 1.E-9 ;
+          tab_z1.'_VISU_' = mail_2 ;
+          modl_2 = 'MODELE' mail_2 'MECANIQUE' 'ELASTIQUE' ;
+          tab_z1.'_NBPG_' = nbpg_1 ;
+          b_z1 = FAUX ; n_z1 = n_z1 + 1 ; b_z2 = VRAI ;
+        'SINON' ;
+     mess 'element' ' ' mot_z ' ' nbpg_1 ' non prevu' ;
+        'FINSI' ; 'FINSI' ;
+      'FINSI' ;
+
+      'SI' b_z1 ;
+MESS '  Element ' mot_z ' non traite dans VISUPG -> CHAMPS identiques' ;
+      'FINSI' ;
+      tab_z1.'_MODL_' = modl_2 ;
+      modl_z = modl_z 'ET' modl_2 ;
+      mail_z = mail_z 'ET' mail_2 ;
+      'SI' b_z2 ;
+        n_z2 = n_z2 + 1 ;
+MESS '  Accrochage mail_2 sur mail_1 (long ?) :' ;
+        rig_z = 'RELA' 'ACCRO' mail_2 mail_1 ;
+        rigc_z rigd_z = 'CHANGER' rig_z 'COND' ;
+        riga_z = riga_z 'ET' rigc_z ;
+      'FINSI' ;
+    'FIN' Bouc1 ;
+
+    'SI' ('>EG' n_z 1) ;
+      s_tabm.'_MODL_VISU_' = modl_z ;
+      s_tabm.'_MAIL_VISU_' = mail_z ;
+    'FINSI' ;
+    'SI' ('>EG' n_z2 1) ;
+      s_tabm.'_RIGA_VISU_' = riga_z ;
+    'FINSI' ;
+    s_tabm.'_GEO0_VISU_' = 'FORM' ;
+
+* Stockage du contour/arete du maillage pour la visualisation :
+    'SI' ('EGA' ('VALE' 'DIME') 3) ;
+      ce_mail = 'ARETE' s_tabm.'_MAIL_VISU_' ;
+    'SINON' ;
+      ce_mail = 'CONTOUR' s_tabm.'_MAIL_VISU_' ;
+    'FINSI' ;
+    s_tabm.'_MACE_VISU_' = ce_mail ;
+  'FINSI' ;
+
+  'SI' ('NON' b_chmu) ;
+    'RESPRO' s_tabm ;
+    'QUITTER' VisuPG ;
+  'FINSI' ;
+
+* Trace des champs aux points de Gauss :
+
+* Extraction de la composante a visualiser :
+  tr_cham = 'EXCO' e_comp e_chml e_comp ;
+
+  tr_modl = s_tabm.'_MODL_VISU_' ;
+  'SI' ('NEG' tr_modl s_tabm.'_MODELE_') ;
+    chml_z = 'VIDE' 'MCHAML' ;
+    n_z = s_tabm.'_NBZONES_' ;
+    'REPETER' Bouc1 n_z ;
+      tabl_1 = s_tabm. &Bouc1 ;
+      mail_1 = tabl_1.'_VISU_' ;
+      modl_1 = tabl_1.'_MODL_' ;
+      'SI' ('EGA' mail_1 '__IDEM__') ;
+        chml_1 = 'REDU' tr_cham modl_1 ;
+        chml_1 = 'CHANGER' 'TYPE' chml_1 'SCALAIRE' ;
+      'SINON' ;
+        i_z = (tabl_1.'_NBEL_') '*' (tabl_1.'_NBPG_') ;
+        lr_1 = 'PROG' i_z '*' 0. ;
+        i_z = 0 ;
+        'REPETER' Bouc2 (tabl_1.'_NBEL_') ;
+          'REPETER' Bouc3 (tabl_1.'_NBPG_') ;
+            i_z = i_z '+' 1 ;
+            r_z = 'EXTRAIRE' tr_cham e_comp &Bouc1 &Bouc2 &Bouc3 ;
+            'REMPLACER' lr_1 i_z r_z ;
+          'FIN' Bouc3 ;
+        'FIN' Bouc2 ;
+        chml_1 = 'MANU' 'CHML' modl_1 'REPA'
+                               e_comp lr_1
+                               'TYPE' 'SCALAIRE' 'GRAVITE' ;
+      'FINSI' ;
+      chml_z = chml_z 'ET' chml_1 ;
+    'FIN' Bouc1 ;
+  'SINON' ;
+    chml_z = tr_cham ;
+  'FINSI' ;
+  tr_cham = 'REDU' chml_z tr_modl ;
+  s_tabm.'MCHAML_VISU' = tr_cham ;
+
+* Trace dans la configuration deformee :
+  'SI' b_chpu ;
+    'SI' ('NEG' e_chpu s_tabm.'_DEPL_VISU_') ;
+      s_tabm.'_DEPL_VISU_' = e_chpu ;
+      riga_z = s_tabm.'_RIGA_VISU_' ;
+      tr_chpu = e_chpu ;
+      'SI' ('NEG' riga_z '__VIDE__') ;
+        chp_z = riga_z '*' e_chpu ;
+        chp_z = 'CHANGER' 'ATTRIBUT' chp_z 'NATURE' 'DIFFUS' ;
+        tr_chpu = tr_chpu 'ET' chp_z ;
+      'FINSI' ;
+      s_tabm.'_GEOC_VISU_' = 'FORM' tr_chpu ;
+    'SINON' ;
+      'FORM' s_tabm.'_GEOC_VISU_' ;
+    'FINSI' ;
+  'FINSI' ;
+
+  ce_mail = s_tabm.'_MACE_VISU_' ;
+  'SI' b_titr ;
+    titr_z = e_titr ;
+  'SINON' ;
+    'SI' ('EXISTE' s_tabm '@TITR_VISU') ;
+      titr_z = 'CHAINE' s_tabm.'@TITR_VISU' ;
+    'SINON' ;
+      titr_z = 'CHAINE' 'Trace par PG du champ par element ' ;
+    'FINSI' ;
+  'FINSI' ;
+  'SI' b_isov ;
+    liso_z = e_isov ;
+  'SINON' ;
+    'SI' ('EXISTE' s_tabm '@ISOV_VISU') ;
+      liso_z = s_tabm.'@ISOV_VISU' ;
+    'SINON' ;
+      liso_z = 'TEXT' ' ' ;
+    'FINSI' ;
+  'FINSI' ;
+  'TRACER' tr_modl tr_cham ce_mail 'BOITE' 
+           'TITRE' titr_z liso_z ;
+
+* Retour a la configuration initiale
+  'SI' b_chpu ;
+    'FORM' s_tabm.'_GEO0_VISU_' ;
+  'FINSI' ;
+
+  'RESPRO' s_tabm ;
+'FINPROC' ;
+$$$$
+

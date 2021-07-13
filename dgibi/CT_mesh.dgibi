@@ -1,0 +1,1017 @@
+***************
+* CT maillage *
+***************
+
+OPTI ECHO 0 ;      
+OPTI TRAC 'PSC' ;                  
+OPTI 'FTRA' 'CT_mesh.ps' ;
+OPTI 'ERRE' 'FATAL' ;
+
+'OPTI' 'ACQU' 'data_calcul.dgibi';
+
+'MESS' '*****************************';
+
+* 2D ou 3D:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+DIME0 = val0;
+'MESS' ' 2D-3D  = ' (DIME0) ;
+
+* Elements LINE0s ou quadratiques:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+LINE0 = val0;
+'MESS' ' Linear elements  = ' (LINE0) ;
+
+* Elements a integration selective:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+BBAR0 = val0;
+'MESS' ' Selective integration  = ' (BBAR0) ;
+
+* Elements a integration REDU0e:
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+REDU0 = val0;
+'MESS' ' Reduced integration  = ' (REDU0) ;
+
+* Damage :
+'ACQU' MM0*'MOT';
+'ACQU' val0*'ENTIER';
+GTN = val0;
+'MESS' ' Damage  = ' (GTN) ;
+
+* Thermal fluence
+'ACQU' MM0*'MOT';
+'ACQU' val0*'FLOTTANT';
+PHI  = val0;
+'MESS' ' Thermal fluence  = ' (PHI) ;
+
+'MESS' '*****************************';
+
+* Verification: pas d'integration selective avec elements quadratiques
+SI (BBAR0 EGA 1) ;
+  LINE0 = 0 ;
+FINSI ;
+*
+*-------------------------------------------------------------------*
+*                     PROCEDURE DE DERAFFINAGE                      *
+*-------------------------------------------------------------------*
+*
+DEBPROC DERAFFIN_DR LI_1*MAILLAGE LI_2*MAILLAGE;
+*FONCTIONNE SEULEMENT AVEC DES NOMBRES PAIRS D ELEMENTS
+*EXTRACTION PREMIER POINT POUR SCAN
+P_1 = LI_1 POINT 'INITIAL';
+P_2 = LI_2 POINT 'INITIAL';
+*RECUPERATION DU NOMBRE D ELEMENT SUR CHAQUE ARC
+NB_EL_INI = NBEL LI_1;
+NB_EL_FIN = NBEL LI_2;
+*DEFINITION DE LA STRATEGIE TOPOLOGIQUE OPTIMALE
+*TOPO_3 :        TOPO_4:
+*    _______         _________
+*    | |_| |         | |_|_| |
+*    |/___\|         |/__|__\| 
+*INDINCE DE PERFORMANCE EN TOPO 3 
+PERF_TOPO_3 = (LOG(NB_EL_FIN)-(LOG(NB_EL_INI)))/(LOG(3.)); 
+*INDICE DE PERFORMANCE EN TOPO 4
+PERF_TOPO_4 = (LOG(NB_EL_FIN)-(LOG(NB_EL_INI)))/(LOG(2.)); 
+
+*MESS (PERF_TOPO_3);
+*MESS (PERF_TOPO_4);
+I=0;
+*NB D ELEM DE CHAQUE ARC CORRESPOND PARFAITEMENT A UNE TOPO 3
+*CONDITION BIZARRE POUR CONTOURNER L ERREUR MACHINE DU LOG
+SI ((PERF_TOPO_3 > 0.99999) ET (PERF_TOPO_3 <EG 1.00001));
+*    MESS 'TOPO_3' ;
+    I=1;
+    REPETER ITER_1 NB_EL_INI;
+        LI_ITER_i_1 = DROIT 1 (LI_1 POINT (&ITER_1-1+1))
+                              (LI_2 POINT (&ITER_1-1*3+1));
+        LI_ITER_i = DROIT 1 (LI_1 POINT (&ITER_1+1))
+                            (LI_2 POINT (&ITER_1*3+1));
+        LIG_ITER_i_INI = DROI 1 (LI_1 POINT (&ITER_1-1+1))
+                                (LI_1 POINT (&ITER_1+1));
+        LIG_ITER_i_FIN = DROI 3 (LI_2 POINT (&ITER_1-1*3+1))
+                                (LI_2 POINT (&ITER_1*3+1));
+        SI (&ITER_1 EGA 1);
+            SU = DALLER LIG_ITER_i_INI LI_ITER_i_1
+                        LIG_ITER_i_FIN LI_ITER_i ;        
+        SINON;
+            SU = SU ET (DALLER LIG_ITER_i_INI LI_ITER_i_1
+                           LIG_ITER_i_FIN LI_ITER_i );        
+        FINSI;
+    FIN ITER_1;
+FINSI;
+
+*NB D ELEM DE CHAQUE ARC CORRESPOND PARFAITEMENT A UNE TOPO 2
+*CONDITION BIZARRE POUR CONTOURNER L ERREUR MACHINE DU LOG
+SI ((PERF_TOPO_4 > 0.99999) ET (PERF_TOPO_4 <EG 1.00001));
+*    MESS 'TOPO_4';
+    I=1;
+    REPETER ITER_1 NB_EL_INI;
+        SI ((&ITER_1/2.) EGA (&ITER_1/2));
+            LI_ITER_i_1= DROI 2 (LI_1 POINT (&ITER_1-1+1))
+                                 (LI_2 POINT (&ITER_1-1*2+1));
+            LI_ITER_i  = DROI 1 (LI_1 POINT (&ITER_1+1))
+                                 (LI_2 POINT (&ITER_1*2+1));
+        SINON;
+            LI_ITER_i_1= DROI 1 (LI_1 POINT (&ITER_1-1+1))
+                                 (LI_2 POINT (&ITER_1-1*2+1));
+            LI_ITER_i  = DROI 2 (LI_1 POINT (&ITER_1+1))
+                                 (LI_2 POINT (&ITER_1*2+1));
+        FINSI;    
+        LIG_ITER_i_INI = DROI 1 (LI_1 POINT (&ITER_1-1+1))
+                                 (LI_1 POINT (&ITER_1+1));
+        LIG_ITER_i_FIN = DROI 2 (LI_2 POINT (&ITER_1-1*2+1))
+                                 (LI_2 POINT (&ITER_1*2+1));
+        SI (&ITER_1 EGA 1);
+            SU = DALLER LIG_ITER_i_INI LI_ITER_i
+                        LIG_ITER_i_FIN LI_ITER_i_1 ;        
+        SINON;
+            SU = SU ET (DALLER LIG_ITER_i_INI LI_ITER_i 
+                        LIG_ITER_i_FIN LI_ITER_i_1 );        
+        FINSI;
+    FIN ITER_1;
+FINSI;
+*SI LES TOPOS PRECEDENTES SE SONT TOURNEES LES POUCES ON PART
+*SUR UN MAILLAGE PLUS MOCHE
+SI (I EGA 0);
+    LI_1 = DROIT 1 (LI_1 POINT 'INITIAL')
+                   (LI_2 POINT 'INITIAL');
+    LI_2 = DROIT 1 (LI_1 POINT 'FINAL')
+                   (LI_2 POINT 'FINAL');
+    SU = DALLER LI_1 LI_1 LI_2 LI_2;
+FINSI;
+
+ELIM SU 1.E-9;
+
+FINPROC SU;
+*
+SI (DIME0 EGA 3) ;
+*
+*-------------------------------------------------------------------*
+*--------------------- OPTIONS GENERALES ---------------------------*
+*-------------------------------------------------------------------*
+*
+    SI (LINE0 EGA 1) ;
+        ELEM0 = 'LINE0' ;
+	    ELEM1 = CUB8 ;
+        SI (REDU0 EGA 1) ;
+            ELEM2 = ICC8 ;
+	    FINSI ;
+        SINON ;
+             ELEM0 = 'QUADRATIQUE' ;
+		     ELEM1 = CU20 ;
+             SI (REDU0 EGA 1) ;
+	              ELEM2 = CU20RI ;
+		     FINSI ;
+    FINSI ;
+    OPTI DIME DIME0 ELEM ELEM1 'MODELISER' 'TRID' ;
+    OPTI EPSI UTILISATEUR ;
+*
+** INDICATEUR DE TRACE
+GRAPH = VRAI ;
+*
+    SINON ;
+
+        SI (LINE0 EGA 1) ;
+            ELEM0 = 'LINE0' ;
+	        ELEM1 = QUA4 ;
+            SI (REDU0 EGA 1) ;
+                ELEM2 = Q4RI ;
+	        FINSI ;
+            SINON ;
+                 ELEM0 = 'QUADRATIQUE' ;
+		         ELEM1 = QUA8 ;
+                 SI (REDU0 EGA 1) ;
+	                 ELEM2 = Q8RI ;
+		         FINSI ;
+        FINSI ;
+        OPTI DIME DIME0 ELEM ELEM1 MODE PLAN DEFO ;
+        OPTI EPSI UTILISATEUR ;
+*
+**INDICATEUR DE TRACE
+GRAPH = VRAI ;
+*
+FINSI ;
+*
+*-------------------------------------------------------------------*
+*------------ PARAMETRES GEOMETRIQUES, MATERIAUC ET CL -------------*
+*-------------------------------------------------------------------*
+** GEOMETRIE CT
+*
+W = 25. ;
+a_o = 15.5 ;
+a_f = 7. ;
+a_i = a_f ;
+a = (0.25*W);
+a_o = (a_o+a) ;
+*LIST a_o ;
+a_f = (a_f+a_o) ;
+*LIST a_f ;
+*
+R0    = 0.25 ;
+EPA   = 1.E-2 ;
+B     = 12.5 ;
+*
+*--------------------------- MAILLAGE ------------------------------*
+*
+*
+TAB0 = LIRE 'MED' 'Ct.med' ;
+*LIST TAB0 ;
+*
+*-------------------------------------------------------------------*
+*-------------- POINTS POUR LA CONSTRUCTION DES LIGNES -------------*
+*-------------------------------------------------------------------*
+*
+*
+PA    = TAB0 . 'PA' POIN 'INITIAL' ;
+PB    = TAB0 . 'PB' POIN 'INITIAL' ;
+PC    = TAB0 . 'PC' POIN 'INITIAL' ;
+PD    = TAB0 . 'PD' POIN 'INITIAL' ;
+PE    = TAB0 . 'PE' POIN 'INITIAL' ;
+PF    = TAB0 . 'PF' POIN 'INITIAL' ;
+PG    = TAB0 . 'PG' POIN 'INITIAL' ;
+PH    = TAB0 . 'PH' POIN 'INITIAL' ;
+PI    = TAB0 . 'PI' POIN 'INITIAL' ;
+
+SI (DIME0 EGA 3) ;
+
+     PA1   = POIN (a_o) (0.8+(0.56799*W)) 0. ;
+     PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) 0. ;
+     PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) 0. ;
+     PD1   = POIN (a_o) (0.8+(4*((0.26799*W)/6))) 0. ;
+     PE1   = POIN (a_o) (0.8+(3*((0.26799*W)/6))) 0. ;
+     PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) 0. ;
+     PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) 0. ;
+     PH1   = POIN (a_o) 0.8 0. ;
+     PI1   = POIN (a_o) 0. 0. ;
+
+
+     PA2   = POIN (a_f) (0.8+(0.56799*W)) 0. ;
+     PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) 0. ;
+     PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) 0. ;
+     PD2   = POIN (a_f) (0.8+(4*((0.26799*W)/6))) 0. ;
+     PE2   = POIN (a_f) (0.8+(3*((0.26799*W)/6))) 0. ;
+     PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) 0. ;
+     PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) 0. ;
+     PH2   = POIN (a_f) 0.8 0. ;
+     PI2   = POIN (a_f) 0. 0. ;
+
+     PA3   = POIN (1.25*W) (0.8+(0.56799*W)) 0. ;
+     PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) 0. ;
+     PC3   = POIN (1.25*W) (0.8+(5*((0.26799*W)/6))) 0. ;
+     PD3   = POIN (1.25*W) (0.8+(4*((0.26799*W)/6))) 0. ;
+     PE3   = POIN (1.25*W) (0.8+(3*((0.26799*W)/6))) 0. ;
+     PF3   = POIN (1.25*W) (0.8+(2*((0.26799*W)/6))) 0. ;
+     PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) 0. ;
+     PH3   = POIN (1.25*W) 0.8 0. ;
+     PI3   = POIN (1.25*W) 0. 0. ;
+*
+     PA4   = POIN (a_o-0.5) (0.8+(0.56799*W)) 0. ;
+     PB4   = POIN (a_o-0.5) (0.8+(6*((0.26799*W)/6))) 0. ;
+     PC4   = POIN (a_o-0.5) (0.8+(5*((0.26799*W)/6))) 0. ;
+     PD4   = POIN (a_o-0.5) (0.8+(4*((0.26799*W)/6))) 0. ;
+     PE4   = POIN (a_o-0.5) (0.8+(3*((0.26799*W)/6))) 0. ;
+     PF4   = POIN (a_o-0.5) (0.8+(2*((0.26799*W)/6))) 0. ;
+     PG4   = POIN (a_o-0.5) (0.8+(1*((0.26799*W)/6))) 0. ;
+     PH4   = POIN (a_o-0.5) 0.8 0. ;
+     PI4   = POIN (a_o-0.3) 0. 0. ;
+*
+     PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) 0. ;
+     PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) 0. ;
+     PC5   = POIN (a_f+0.5) (0.8+(5*((0.26799*W)/6))) 0. ;
+     PD5   = POIN (a_f+0.5) (0.8+(4*((0.26799*W)/6))) 0. ;
+     PE5   = POIN (a_f+0.5) (0.8+(3*((0.26799*W)/6))) 0. ;
+     PF5   = POIN (a_f+0.5) (0.8+(2*((0.26799*W)/6))) 0. ;
+     PG5   = POIN (a_f+0.5) (0.8+(1*((0.26799*W)/6))) 0. ;
+     PH5   = POIN (a_f+0.5) 0.8 0. ;
+     PI5   = POIN (a_f+0.5) 0. 0. ;
+	
+	SINON ;
+	      PA1   = POIN (a_o) (0.8+(0.56799*W)) ;
+          PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) ;
+          PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) ;
+          PD1   = POIN (a_o) (0.8+(4*((0.26799*W)/6))) ;
+          PE1   = POIN (a_o) (0.8+(3*((0.26799*W)/6))) ;
+          PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) ;
+          PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) ;
+          PH1   = POIN (a_o) 0.8 ;
+          PI1   = POIN (a_o) 0. ;
+
+
+          PA2   = POIN (a_f) (0.8+(0.56799*W)) ;
+          PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) ;
+          PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) ;
+          PD2   = POIN (a_f) (0.8+(4*((0.26799*W)/6))) ;
+          PE2   = POIN (a_f) (0.8+(3*((0.26799*W)/6))) ;
+          PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) ;
+          PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) ;
+          PH2   = POIN (a_f) 0.8 ;
+          PI2   = POIN (a_f) 0. ;
+
+          PA3   = POIN (1.25*W) (0.8+(0.56799*W)) ;
+          PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) ;
+          PC3   = POIN (1.25*W) (0.8+(5*((0.26799*W)/6))) ;
+          PD3   = POIN (1.25*W) (0.8+(4*((0.26799*W)/6))) ;
+          PE3   = POIN (1.25*W) (0.8+(3*((0.26799*W)/6))) ;
+          PF3   = POIN (1.25*W) (0.8+(2*((0.26799*W)/6))) ;
+          PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) ;
+          PH3   = POIN (1.25*W) 0.8 ;
+          PI3   = POIN (1.25*W) 0. ;
+*
+          PA4   = POIN (a_o-0.5) (0.8+(0.56799*W)) ;
+          PB4   = POIN (a_o-0.5) (0.8+(6*((0.26799*W)/6))) ;
+          PC4   = POIN (a_o-0.5) (0.8+(5*((0.26799*W)/6))) ;
+          PD4   = POIN (a_o-0.5) (0.8+(4*((0.26799*W)/6))) ;
+          PE4   = POIN (a_o-0.5) (0.8+(3*((0.26799*W)/6))) ;
+          PF4   = POIN (a_o-0.5) (0.8+(2*((0.26799*W)/6))) ;
+          PG4   = POIN (a_o-0.5) (0.8+(1*((0.26799*W)/6))) ;
+          PH4   = POIN (a_o-0.5) 0.8 ;
+          PI4   = POIN (a_o-0.3) 0. ;
+*
+          PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) ;
+          PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) ;
+          PC5   = POIN (a_f+0.5) (0.8+(5*((0.26799*W)/6))) ;
+          PD5   = POIN (a_f+0.5) (0.8+(4*((0.26799*W)/6))) ;
+          PE5   = POIN (a_f+0.5) (0.8+(3*((0.26799*W)/6))) ;
+          PF5   = POIN (a_f+0.5) (0.8+(2*((0.26799*W)/6))) ;
+          PG5   = POIN (a_f+0.5) (0.8+(1*((0.26799*W)/6))) ;
+          PH5   = POIN (a_f+0.5) 0.8 ;
+          PI5   = POIN (a_f+0.5) 0. ;
+*
+FINSI ;
+*
+*
+*------------------------------------------------------------------*
+*--------------------- CREATION DES DROITES -----------------------*
+*------------------------------------------------------------------*
+*
+*
+NBSUPY = 12 ;
+NBINFY = 72 ;
+*
+NBGAUX1 = 2 ;
+NBGAUX2 = 12 ;
+*
+NBGAUX3 = 2 ;
+NBGAUX4 = 8 ;
+*
+*
+DA_B = CHAN ELEM0 (TAB0. 'DA_B') ;
+DC_B = CHAN ELEM0 (TAB0. 'DC_B') ;
+DC_D = CHAN ELEM0 (TAB0. 'DC_D') ;
+DE_D = CHAN ELEM0 (TAB0. 'DE_D') ;
+DE_F = CHAN ELEM0 (TAB0. 'DE_F') ;
+DG_F = CHAN ELEM0 (TAB0. 'DG_F') ;
+DG_H = CHAN ELEM0 (TAB0. 'DG_H') ;
+DH_I = CHAN ELEM0 (TAB0. 'DH_I') ;
+
+DRT0 = DA_B ET DC_B ET DC_D ET DE_D ET DE_F ET DG_F ET DG_H ET DH_I ;
+*
+DROI1 = DROI (NBSUPY) PA1 PA2 COUL ROUG ; 
+DROI2 = DROI (NBSUPY) PB1 PB2 COUL ROUG ; 
+DROI3 = DROI (NBSUPY) PC1 PC2 COUL ROUG ; 
+DROI4 = DROI (NBSUPY) PD1 PD2 COUL ROUG ; 
+DROI5 = DROI (NBSUPY) PE1 PE2 COUL ROUG ; 
+DROI6 = DROI (NBSUPY) PF1 PF2 COUL ROUG ; 
+
+DRT1  = DROI1 ET DROI2 ET DROI3 ET DROI4 ET 
+        DROI5 ET DROI6 ;
+*
+*
+DROI7  = DROI (2) PA1 PB1 COUL VERT ; 
+DROI8  = DROI (2) PA2 PB2 COUL VERT ; 
+DROI9  = DROI (1) PB1 PC1 COUL VERT ; 
+DROI10 = DROI (1) PB2 PC2 COUL VERT ; 
+DROI11 = DROI (1) PC1 PD1 COUL VERT ; 
+DROI12 = DROI (1) PC2 PD2 COUL VERT ;   
+DROI13 = DROI (1) PD1 PE1 COUL VERT ; 
+DROI14 = DROI (1) PD2 PE2 COUL VERT ; 
+DROI15 = DROI (1) PE1 PF1 COUL VERT ; 
+DROI16 = DROI (1) PE2 PF2 COUL VERT ; 
+
+DRT2   = DROI7 ET DROI8 ET DROI9 ET DROI10 ET 
+         DROI11 ET DROI12 ET DROI13 ET DROI14 
+		 ET DROI15 ET DROI16 ; 
+*
+*
+DROI17 = DROI (NBINFY) PG1 PG2 COUL BLEU ;
+DROI18 = DROI (NBINFY) PH1 PH2 COUL BLEU ;
+DROI19 = DROI (NBINFY) PI1 PI2 COUL BLEU ;
+
+DRT3   = DROI17 ET DROI18 ET DROI19 ;
+*
+*
+DROI21 = DROI (NBGAUX2) PG1 PH1 COUL ROSE ;
+DROI22 = DROI (NBGAUX2) PG2 PH2 COUL ROSE ;
+
+DRT4   = DROI21 ET DROI22 ;
+*
+DROI25 = DROI (NBGAUX4) PH1 PI1 COUL ROSE ;
+DROI26 = DROI (NBGAUX4) PH2 PI2 COUL ROSE ;
+
+DRT5   = DROI25 ET DROI26 ;
+*
+DROI28 = DROI (2) PA PA4 ; 
+DROI29 = DROI (2) PB PB4 ; 
+DROI30 = DROI (2) PC PC4 ; 
+DROI31 = DROI (2) PD PD4 ; 
+DROI32 = DROI (2) PE PE4 ; 
+DROI33 = DROI (2) PF PF4 ;   
+DROI34 = DROI (2) PG PG4 ; 
+DROI35 = DROI (2) PH PH4 ; 
+DROI36 = DROI (2) PI PI4 ; 
+
+DRT6 = DROI28 ET DROI29 ET DROI30 ET DROI31 ET DROI32 ET DROI33 
+       ET DROI34 ET DROI35 ET DROI36 ; 
+*
+DROI37 = DROI (2) PA4 PA1 ;
+DROI38 = DROI (2) PB4 PB1 ; 
+DROI39 = DROI (2) PC4 PC1 ; 
+DROI40 = DROI (2) PD4 PD1 ; 
+DROI41 = DROI (2) PE4 PE1 ; 
+DROI42 = DROI (2) PF4 PF1 ; 
+
+DRT7 = DROI37 ET DROI38 ET DROI39 ET DROI40 ET DROI41 ET DROI42 ;
+*
+DROI46 = DROI (2) PA2 PA5 ; 
+DROI47 = DROI (2) PB2 PB5 ;
+DROI48 = DROI (2) PC2 PC5 ; 
+DROI49 = DROI (2) PD2 PD5 ; 
+DROI50 = DROI (2) PE2 PE5 ; 
+DROI51 = DROI (2) PF2 PF5 ; 
+
+DRT8 = DROI46 ET DROI47 ET DROI48 ET DROI49 ET DROI50 ET DROI51 ;
+* 
+DROI55 = DROI (2) PA5 PA3 ;
+DROI56 = DROI (2) PB5 PB3 ;
+DROI57 = DROI (2) PC5 PC3 ; 
+DROI58 = DROI (2) PD5 PD3 ; 
+DROI59 = DROI (2) PE5 PE3 ; 
+DROI60 = DROI (2) PF5 PF3 ; 
+DROI61 = DROI (2) PG5 PG3 ; 
+DROI62 = DROI (2) PH5 PH3 ;   
+DROI63 = DROI (2) PI5 PI3 ;
+
+DRT9 = DROI55 ET DROI56 ET DROI57 ET DROI58 ET DROI59 ET DROI60
+       ET DROI61  ET DROI62 ET DROI63 ;
+*
+DROI64 = DROI (2) PA4 PB4 ;
+DROI65 = DROI (1) PB4 PC4 ;
+DROI66 = DROI (1) PC4 PD4 ; 
+DROI67 = DROI (1) PD4 PE4 ; 
+DROI68 = DROI (1) PE4 PF4 ; 
+DROI69 = DROI (2) PF4 PG4 ; 
+DROI70 = DROI (2) PG4 PH4 ; 
+DROI71 = DROI (2) PH4 PI4 ;   
+
+
+DROI74 = DROI (2) PA5 PB5 ;
+DROI75 = DROI (1) PB5 PC5 ; 
+DROI76 = DROI (1) PC5 PD5 ; 
+DROI77 = DROI (1) PD5 PE5 ; 
+DROI78 = DROI (1) PE5 PF5 ; 
+DROI79 = DROI (2) PF5 PG5 ; 
+DROI80 = DROI (2) PG5 PH5 ;   
+DROI81 = DROI (2) PH5 PI5 ;  
+
+DRT10 = DROI64 ET DROI65 ET DROI66 ET DROI67 ET DROI68 ET DROI69
+        ET DROI70 ET DROI71 ET DROI74 ET DROI75 ET DROI76 ET DROI77 
+		ET DROI78 ET DROI79 ET DROI80 ET DROI81 ;		
+*
+DA3_B3 = DROI (2) PA3 PB3 ;
+DC3_B3 = DROI (1) PB3 PC3 ;
+DC3_D3 = DROI (1) PC3 PD3 ;
+DE3_D3 = DROI (1) PD3 PE3 ;
+DE3_F3 = DROI (1) PE3 PF3 ;
+DG3_F3 = DROI (2) PF3 PG3 ;
+DG3_H3 = DROI (2) PG3 PH3 ;
+DH3_I3 = DROI (2) PH3 PI3 ;
+
+DRT11 = DA3_B3 ET DC3_B3 ET DC3_D3 ET DE3_D3 ET DE3_F3 ET DG3_F3
+        ET DG3_H3 ET DH3_I3 ;
+*
+DRTT = DRT0 ET DRT1 ET DRT2 ET DRT3 ET DRT4 ET DRT5 ET DRT6 ET DRT7
+       ET DRT8 ET DRT9 ET DRT10 ET DRT11 ;
+*
+*------------------------------------------------------------------*
+*-------------- CREATION DES CONTOURS ET SURFACES -----------------*
+*------------------------------------------------------------------*
+*
+*
+CO1 = DROI7  ET DROI1  ET DROI8  ET DROI2 ;
+CO2 = DROI9  ET DROI2  ET DROI10 ET DROI3 ;
+CO3 = DROI11 ET DROI3  ET DROI12 ET DROI4 ;
+CO4 = DROI13 ET DROI4  ET DROI14 ET DROI5 ;
+CO5 = DROI15 ET DROI5  ET DROI16 ET DROI6 ;
+CO6 = DROI21 ET DROI17 ET DROI22 ET DROI18 ;
+*
+CO7 = DROI25 ET DROI18 ET DROI26 ET DROI19 ;
+*
+CO9  = DA_B ET DROI28 ET DROI64 ET DROI29 ;
+CO10 = DC_B ET DROI29 ET DROI65 ET DROI30 ;
+CO11 = DC_D ET DROI30 ET DROI66 ET DROI31 ;
+CO12 = DE_D ET DROI31 ET DROI67 ET DROI32 ;
+CO13 = DE_F ET DROI32 ET DROI68 ET DROI33 ;
+CO14 = DG_F ET DROI33 ET DROI69 ET DROI34 ;
+CO15 = DG_H ET DROI34 ET DROI70 ET DROI35 ;
+*
+CO16 = DH_I ET DROI35 ET DROI71 ET DROI36 ;
+*
+CO17 = DROI64 ET DROI37 ET DROI7  ET DROI38 ;
+CO18 = DROI65 ET DROI38 ET DROI9  ET DROI39 ;
+CO19 = DROI66 ET DROI39 ET DROI11 ET DROI40 ;
+CO20 = DROI67 ET DROI40 ET DROI13 ET DROI41 ;
+CO21 = DROI68 ET DROI41 ET DROI15 ET DROI42 ;
+*
+CO25 = DROI8  ET DROI46 ET DROI56 ET DROI47 ;
+CO26 = DROI10 ET DROI47 ET DROI75 ET DROI48 ;
+CO27 = DROI12 ET DROI48 ET DROI76 ET DROI49 ;
+CO28 = DROI14 ET DROI49 ET DROI77 ET DROI50 ;
+CO29 = DROI16 ET DROI50 ET DROI78 ET DROI51 ;
+*
+CO33 = DROI74 ET DROI55 ET DA3_B3 ET DROI56 ;
+CO34 = DROI75 ET DROI56 ET DC3_B3 ET DROI57 ;
+CO35 = DROI76 ET DROI57 ET DC3_D3 ET DROI58 ;
+CO36 = DROI77 ET DROI58 ET DE3_D3 ET DROI59 ;
+CO37 = DROI78 ET DROI59 ET DE3_F3 ET DROI60 ;
+CO38 = DROI79 ET DROI60 ET DG3_F3 ET DROI61 ;
+CO39 = DROI80 ET DROI61 ET DG3_H3 ET DROI62 ;
+CO40 = DROI81 ET DROI62 ET DH3_I3 ET DROI63 ;
+*
+*
+SU1 = DROI1  REGL 2 DROI2 ;
+SU2 = DROI2  REGL 1 DROI3 ;
+SU3 = DROI3  REGL 1 DROI4 ;
+SU4 = DROI4  REGL 1 DROI5 ;
+SU5 = DROI5  REGL 1 DROI6 ;
+SU6 = DROI17 REGL (NBGAUX2) DROI18 ;
+SU7 = DROI18 REGL (NBGAUX4) DROI19 ; 
+*
+SU8  = DROI28 REGL 2 DROI29 ;
+SU9  = DROI29 REGL 1 DROI30 ; 
+SU10 = DROI30 REGL 1 DROI31 ;
+SU11 = DROI31 REGL 1 DROI32 ;
+SU12 = DROI32 REGL 1 DROI33 ;
+SU13 = DROI33 REGL 2 DROI34 ;
+SU14 = DROI34 REGL 2 DROI35 ; 
+SU15 = DROI35 REGL 2 DROI36 ;
+*
+SU16 = DROI37 REGL 2 DROI38 ;
+SU17 = DROI38 REGL 1 DROI39 ;
+SU18 = DROI39 REGL 1 DROI40 ;
+SU19 = DROI40 REGL 1 DROI41 ;
+SU20 = DROI41 REGL 1 DROI42 ;
+*
+SU24 = DROI46 REGL 2 DROI47 ;
+SU25 = DROI47 REGL 1 DROI48 ;
+SU26 = DROI48 REGL 1 DROI49 ;
+SU27 = DROI49 REGL 1 DROI50 ; 
+SU28 = DROI50 REGL 1 DROI51 ;
+*
+SU32 = DROI55 REGL 2 DROI56 ;
+SU33 = DROI56 REGL 1 DROI57 ;
+SU34 = DROI57 REGL 1 DROI58 ; 
+SU35 = DROI58 REGL 1 DROI59 ;
+SU36 = DROI59 REGL 1 DROI60 ;
+SU37 = DROI60 REGL 2 DROI61 ;
+SU38 = DROI61 REGL 2 DROI62 ;
+SU39 = DROI62 REGL 2 DROI63 ;
+*
+*
+*
+*------------------------------------------------------------------*
+*-------------- APPLICATION DE LA PROCEDURE EN Y ------------------*
+*------------------------------------------------------------------*         
+*
+*
+UN_ETAGE = FAUX ;
+PERF_TOPO_3 = (LOG(NBINFY)-(LOG(NBSUPY)))/(LOG(3.)) ; 
+* INDICE DE PERFORMANCE EN TOPO 4
+PERF_TOPO_4 = (LOG(NBINFY)-(LOG(NBSUPY)))/(LOG(2.)) ; 
+* BOUCLE PERMETTANT LA DECISION DE CREATION D UN ETAGE
+SI ((PERF_TOPO_3 > 1.0001) ET (PERF_TOPO_4 > 1.0001)) ;
+     NO_1=3 ;
+     SI ((PERF_TOPO_4 > 1.99999) ET (PERF_TOPO_4 <EG 2.00001)) ;
+         NO_1 = 2 ;
+     FINSI;
+     LI_INUTILE_1 = DROIT 2 (DROI6 POINT 'INITIAL')
+                           (DROI17 POINT 'INITIAL') ;
+     LI_INUTILE_2 = DROIT 2 (DROI6 POINT 'FINAL')
+                           (DROI17 POINT 'FINAL') ;
+     LI_INTERM = DROI (NO_1*NBSUPY) (LI_INUTILE_1 POINT (2))
+                                     (LI_INUTILE_2 POINT (2)) ;
+     SU_RAD_GROS_2 = DERAFFIN_DR DROI6 LI_INTERM ;
+     SU_RAD_INTERM = DERAFFIN_DR LI_INTERM DROI17 ;
+* ON RECOLLE LES DEUX MAILLAGES   
+     ELIM SU_RAD_GROS_2 SU_RAD_INTERM 1.E-2 ;
+     SU_RAD_GROS_2 = SU_RAD_GROS_2 ET SU_RAD_INTERM ;
+     UN_ETAGE = VRAI ;
+     SINON ;
+         SU_RAD_GROS_2 = DERAFFIN_DR DROI6 DROI17 ;
+FINSI ;
+*
+*
+*------------------------------------------------------------------*
+*------------ APPLICATION DE LA PROCEDURE EN X SUP ----------------*
+*------------------------------------------------------------------*         
+*
+*
+UN_ETAGE = FAUX ;
+PERF_TOPO_3 = (LOG(NBGAUX2)-(LOG(NBGAUX1)))/(LOG(3.)) ; 
+*INDICE DE PERFORMANCE EN TOPO 4
+PERF_TOPO_4 = (LOG(NBGAUX2)-(LOG(NBGAUX1)))/(LOG(2.)) ; 
+*BOUCLE PERMETTANT LA DECISION DE CREATION D UN ETAGE
+SI ((PERF_TOPO_3 > 1.0001) ET (PERF_TOPO_4 > 1.0001)) ;
+    NO_1=3 ;
+    SI ((PERF_TOPO_4 > 1.99999) ET (PERF_TOPO_4 <EG 2.00001)) ;
+        NO_1 = 2 ;
+    FINSI;
+    LI_INUTILE_3 = DROIT 2 (DROI70 POINT 'INITIAL')
+                           (DROI21 POINT 'INITIAL') ;
+    LI_INUTILE_4 = DROIT 2 (DROI70 POINT 'FINAL')
+                           (DROI21 POINT 'FINAL') ;
+						   
+	LI_INUTILE_5 = DROIT 2 (DROI80 POINT 'INITIAL')
+                           (DROI22 POINT 'INITIAL') ;
+    LI_INUTILE_6 = DROIT 2 (DROI80 POINT 'FINAL')
+                           (DROI22 POINT 'FINAL') ;
+						   
+    LI_INTERM2 = DROI (NO_1*NBGAUX1) (LI_INUTILE_3 POINT (2))
+                                     (LI_INUTILE_4 POINT (2)) ;
+									 
+    LI_INTERM3 = DROI (NO_1*NBGAUX1) (LI_INUTILE_5 POINT (2))
+                                     (LI_INUTILE_6 POINT (2)) ;
+									 
+    SU_RAD_GROS_4 = DERAFFIN_DR DROI70 LI_INTERM2 ;
+    SU_RAD_INTERM2 = DERAFFIN_DR LI_INTERM2 DROI21 ;
+	
+	SU_RAD_GROS_5 = DERAFFIN_DR DROI80 LI_INTERM3 ;
+    SU_RAD_INTERM3 = DERAFFIN_DR LI_INTERM3 DROI22 ;
+	
+*   ON RECOLLE LES DEUX MAILLAGES   
+    ELIM SU_RAD_GROS_4 SU_RAD_INTERM2 1.E-2 ;
+    SU_RAD_GROS_4 = SU_RAD_GROS_4 ET SU_RAD_INTERM2 ;
+	
+*   ON RECOLLE LES DEUX MAILLAGES   
+    ELIM SU_RAD_GROS_5 SU_RAD_INTERM3 1.E-2 ;
+    SU_RAD_GROS_5 = SU_RAD_GROS_5 ET SU_RAD_INTERM3 ;
+    UN_ETAGE = VRAI ;
+SINON ;
+    SU_RAD_GROS_4 = DERAFFIN_DR DROI70 DROI21 ;
+	SU_RAD_GROS_5 = DERAFFIN_DR DROI80 DROI22 ;
+FINSI ;
+*
+*
+*------------------------------------------------------------------*
+*------------ APPLICATION DE LA PROCEDURE EN X INF ----------------*
+*------------------------------------------------------------------*         
+*
+*
+UN_ETAGE = FAUX ;
+PERF_TOPO_3 = (LOG(NBGAUX4)-(LOG(NBGAUX3)))/(LOG(3.)) ; 
+*INDICE DE PERFORMANCE EN TOPO 4
+PERF_TOPO_4 = (LOG(NBGAUX4)-(LOG(NBGAUX3)))/(LOG(2.)) ; 
+*BOUCLE PERMETTANT LA DECISION DE CREATION D UN ETAGE
+SI ((PERF_TOPO_3 > 1.0001) ET (PERF_TOPO_4 > 1.0001)) ;
+     NO_1=3 ;
+     SI ((PERF_TOPO_4 > 1.99999) ET (PERF_TOPO_4 <EG 2.00001)) ;
+         NO_1 = 2 ;
+     FINSI;
+
+     LI_INUTILE_8 = DROIT 2 (DROI71 POINT 'FINAL')
+                           (DROI25 POINT 'FINAL') ;
+						   
+     LI_INUTILE_10 = DROIT 2 (DROI81 POINT 'FINAL')
+                           (DROI26 POINT 'FINAL') ;
+						   
+     LI_INTERM4 = DROI (NO_1*NBGAUX3) (LI_INUTILE_4 POINT (2))
+                                     (LI_INUTILE_8 POINT (2)) ;
+									 
+     LI_INTERM5 = DROI (NO_1*NBGAUX3) (LI_INUTILE_6 POINT (2))
+                                     (LI_INUTILE_10 POINT (2)) ;
+									 
+     SU_RAD_GROS_8 = DERAFFIN_DR DROI71 LI_INTERM4 ;
+     SU_RAD_INTERM4 = DERAFFIN_DR LI_INTERM4 DROI25 ;
+	
+     SU_RAD_GROS_9 = DERAFFIN_DR DROI81 LI_INTERM5 ;
+     SU_RAD_INTERM5 = DERAFFIN_DR LI_INTERM5 DROI26 ;
+	
+* ON RECOLLE LES DEUX MAILLAGES   
+     ELIM SU_RAD_GROS_8 SU_RAD_INTERM4 1.E-2 ;
+     SU_RAD_GROS_8 = SU_RAD_GROS_8 ET SU_RAD_INTERM4 ;
+	
+* ON RECOLLE LES DEUX MAILLAGES   
+     ELIM SU_RAD_GROS_9 SU_RAD_INTERM5 1.E-2 ;
+     SU_RAD_GROS_9 = SU_RAD_GROS_9 ET SU_RAD_INTERM5 ;
+     UN_ETAGE = VRAI ;
+    SINON ;
+         SU_RAD_GROS_8 = DERAFFIN_DR DROI71 DROI25 ;
+	     SU_RAD_GROS_9 = DERAFFIN_DR DROI81 DROI26 ;
+FINSI ;
+*
+*
+CO8 = LI_INUTILE_1 ET DROI6  ET LI_INUTILE_2 ET DROI17 ;
+*
+CO22 = DROI69 ET DROI42 ET LI_INUTILE_1 ET LI_INUTILE_3 ;
+CO23 = DROI70 ET LI_INUTILE_3 ET DROI21 ET LI_INUTILE_4 ;
+CO24 = DROI71 ET LI_INUTILE_4 ET DROI25 ET LI_INUTILE_8 ;
+*
+CO30 = LI_INUTILE_2 ET DROI51 ET DROI79 ET LI_INUTILE_5 ;
+CO31 = DROI22 ET LI_INUTILE_5 ET DROI80 ET LI_INUTILE_6 ;
+CO32 = DROI26 ET LI_INUTILE_6 ET DROI81 ET LI_INUTILE_10 ;
+*
+SU21 = DROI42 REGL 2 LI_INUTILE_3 ;
+SU22 = SU_RAD_GROS_4 ;
+SU23 = SU_RAD_GROS_8 ;
+*
+SU29 = (INVE DROI51) REGL 2 LI_INUTILE_5 ;
+SU30 = SU_RAD_GROS_5 ;
+SU31 = SU_RAD_GROS_9 ;
+SU40 = SU_RAD_GROS_2 ;
+*
+SUCT  = SU8 ET SU9 ET SU10 ET SU11 ET SU12 ET SU13 ET SU14
+        ET SU16 ET SU17 ET SU18 ET SU19 ET SU20 ET SU1 ET 
+		SU2 ET SU3 ET SU4 ET SU5 ET SU6 ET SU24 ET SU25 ET 
+		SU26 ET SU27 ET SU28 ET SU32 ET SU33 ET SU34 ET SU35
+		ET SU36 ET SU37 ET SU38 ET SU21 ET SU22 ET SU29 ET 
+		SU30 ET SU40 ;
+		
+SUENT = SU15 ET SU7 ET SU39 ET SU23 ET SU31 ; 
+SU    = SUCT ET SUENT ;
+*
+
+SI (DIME0 EGA 3) ;
+
+*------------------------------------------------------------------*
+*----------------- ELEMENTS DU MAILLAGE SURFACIQUE ----------------*
+*------------------------------------------------------------------*
+*
+*     
+     SI (LINE0 EGA 1) ;
+	     GOUP  = TAB0 . 'GOUP' ;
+	     
+         ENTA  = TAB0 . 'ENTA' ;
+         ENTA  = ENTA ET SUENT ;
+         ELIM ENTA 1.E-9 ;
+	     
+         CT    = TAB0 . 'CT' ;
+         CT    = (CT ET SUCT) ;
+         ELIM CT 1.E-9 ;	  
+         SINON ;
+             GOUP  = TAB0 . 'GOUP' ;
+	         GOUP  = TAB0 . 'GOUP' ;
+             GOUP  = CHAN ELEM0 GOUP ;
+             GOUP  = GOUP ELEM QUA8 ;
+	         
+             ENTA  = TAB0 . 'ENTA' ;
+             ENTA  = ENTA ET SUENT ;
+	         ENTA  = CHAN ELEM0 ENTA ;
+             ENTA  = ENTA ELEM QUA8 ;
+             ELIM ENTA 1.E-9 ;
+	         
+             CT    = TAB0 . 'CT' ;
+             CT    = (CT ET SUCT) ;
+	         CT    = CHAN ELEM0 CT ; 
+             CT    = CT ELEM QUA8 ;
+             ELIM CT 1.E-5 ;
+			 
+     FINSI ;			 
+*
+*------------------------------------------------------------------*
+*------------------ PASSAGE A UN MAILLAGE VOLUMIQUE ---------------*
+*------------------------------------------------------------------*
+
+     NEP = 20 ;
+
+     W0 = 0. 0. 5.625 ;
+
+     W1 = 0. 0. (R0-(R0*(COS(60/4)))) ;
+     V1 = 0. (R0*(SIN(60/4))) 0. ;
+
+     W2 = 0. 0. (R0-(R0*(COS((2*60)/4)))) ;
+     V2 = 0. (R0*(SIN((2*60)/4))) 0. ;
+
+     W3 = 0. 0. (R0-(R0*(COS((3*60)/4)))) ;
+     V3 = 0. (R0*(SIN((3*60)/4))) 0. ;
+
+     W4 = 0. 0. (R0-(R0*(COS((4*60)/4)))) ;
+     V4 = 0. (R0*(SIN((4*60)/4))) 0. ;
+
+     W5 = 0. 0. 0.625 ;
+     V5 = 0. (0.8-0.294819) 0. ;
+
+     GOUP0 = GOUP VOLU NEP TRAN W0 ;
+     CT0   = CT VOLU NEP TRAN W0 ;
+     ENTA0 = ENTA VOLU NEP TRAN W0 ;
+
+     CTTOT1 = GOUP0 ET CT0 ET ENTA0 ;
+     TRAC CACH CTTOT1 ;
+*
+*------------------------------------------------------------------*
+*-------------------- RECUPERATION DES FACES ----------------------*
+*------------------------------------------------------------------*
+*
+     F1A F3A F4A = FACE ENTA0 ;
+     FACE1 = (F1A ET F3A ET F4A) ;
+     TRAC (FACE1) ;
+*
+* TRANSLATION D UNE FACE SUIVANT Z
+     FAC1 = F3A ;
+     F3A = (FAC1 PLUS W1) ;
+     F3B = (FAC1 PLUS W2) ; 
+     F3C = (FAC1 PLUS W3) ; 
+     F3D = (FAC1 PLUS W4) ;
+     F3E = (FAC1 PLUS W5) ;  
+     TRAC (F3A ET F3B ET F3C ET F3D ET F3E ET FACE1) ;
+*
+*------------------------------------------------------------------*
+*----------------- ANSLATION D UNE FACE SUIVANT Y -----------------*
+*------------------------------------------------------------------*
+*
+     F3A = F3A PLUS V1 ;
+     F3B = F3B PLUS V2 ;
+     F3C = F3C PLUS V3 ;
+     F3D = F3D PLUS V4 ;
+     F3E = F3E PLUS V5 ;
+     TRAC (F3A ET F3B ET F3C ET F3D ET F3E ET FACE1) ;
+*
+*-----------------------------------------------------------------*
+*--------------------- TRANSFORMATIONS AFFINES ---------------------*
+*-----------------------------------------------------------------*
+*
+     K1 = (0.8-(R0*(SIN(60/4))))/0.8 ;
+     K2 = (0.8-(R0*(SIN((2*60)/4))))/0.8 ;
+     K3 = (0.8-(R0*(SIN((3*60)/4))))/0.8 ;
+     K4 = (0.8-(R0*(SIN((4*60)/4))))/0.8 ;
+     K5 = (0.294819)/0.8 ;
+
+     F31 = F3A AFFI K1 V1 (0 1 0) ;
+     F32 = F3B AFFI K2 V2 (0 1 0) ;
+     F33 = F3C AFFI K3 V3 (0 1 0) ;
+     F34 = F3D AFFI K4 V4 (0 1 0) ;
+     F35 = F3E AFFI K5 V5 (0 1 0) ;
+     TRAC (F31 ET F32 ET F33 ET F34 ET F35 ET FACE1) ;
+*
+     ENTA1 = FAC1 VOLU 1 F31 ;
+     ENTA2 = F31 VOLU 1 F32 ;
+     ENTA3 = F32 VOLU 1 F33 ;
+     ENTA4 = F33 VOLU 1 F34 ;
+     ENTA5 = F34 VOLU 4 F35  ;
+*
+     CT1 = CT0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(60/4))))) ;
+     CT2 = CT1 VOLU 1 TRAN (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
+     CT3 = CT2 VOLU 1 TRAN (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
+     CT4 = CT3 VOLU 1 TRAN (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
+     CT5 = CT4 VOLU 4 TRAN (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
+*
+     GOUP1 = GOUP0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(60/4))))) ;
+     GOUP2 = GOUP1 VOLU 1 TRAN (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
+     GOUP3 = GOUP2 VOLU 1 TRAN (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
+     GOUP4 = GOUP3 VOLU 1 TRAN (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
+     GOUP5 = GOUP4 VOLU 4 TRAN (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
+*
+*-----------------------------------------------------------------*
+*----------------- GROUPES POUR LES PROP. MATERIAU ---------------*
+*-----------------------------------------------------------------*
+*
+     GOUP    = GOUP5 ;
+     GOUP    = CHAN ELEM0 GOUP ;
+     GOUP    = GOUP ELEM ELEM1 ;
+     ELIM GOUP 1.E-9 ; 
+
+     CT      = CT5 ;
+     CT      = CHAN ELEM0 CT ; 
+     CT      = CT ELEM ELEM1 ;
+     ELIM CT 1.E-5 ;
+
+     ENTA    = ENTA0 ET ENTA1 ET ENTA2 ET ENTA3 ET ENTA4 ET ENTA5 ;
+     ENTA    = CHAN ELEM0 ENTA ;
+     ENTA    = ENTA ELEM ELEM1 ;
+     ELIM ENTA 1.E-9 ;
+
+     ENTA_CT = ENTA ET CT ;
+     ELIM ENTA_CT 1.E-5 ;
+	 
+     CTTOT   = GOUP ET ENTA_CT ;
+     ELIM CTTOT 1.E-9 ;
+
+     SI (GRAPH EGA VRAI) ;
+         NBE = NBEL CTTOT ;
+         TRAC CACH CTTOT TITRE (CHAI 'MAILLAGE ('NBE' ELEMENTS)') ;
+     FINSI ;
+*
+*----------------------------------------------------------------*
+*------------ GROUPE POUR LES CONDITIONS AUX LIMITES ------------*
+*----------------------------------------------------------------*
+*
+     CMOD1       = TAB0 . 'CMOD' POIN 'INITIAL' ;
+     CMOD2       = CMOD1 PLUS (0 0 6.25) ;
+     CMOD        = (CTTOT POIN 'DROI' CMOD1 CMOD2 1.E-9) COUL VERT ;
+     TRAC CACH (CMOD ET CTTOT) ;
+
+     CHARn1      = TAB0 . 'CHARn' POIN 'INITIAL' ;
+     CHARn2      = CHARn1 PLUS (0 0 6.25) ;
+     CHARn       = (GOUP POIN 'DROI' CHARn1 CHARn2 1.E-9) COUL VERT ;
+     TRAC CACH (CHARn ET CTTOT) ;
+*
+     P1          = (1. 0. 0.) ;
+     P2          = (0. 0. 1.) ;
+     P3          = (10. 0. 0.) ;
+     P4          = (0. 1. 0.) ;
+*
+     Lgtot       = CTTOT POINT 'PLAN' P1 P2 P3 0.01 ;
+     CHX CHY CHZ = COOR Lgtot ;
+     Lg0         = (POINT CHX 'SUPERIEUR' (a_o+1.75-0.01)) COUL ROUGE ;
+     TRAC CACH (Lg0 ET CTTOT) ;
+*
+     UZ_0        = CTTOT POINT 'PLAN' P1 P4 P3 0.01 COUL ROSE ;
+     TRAC CACH (UZ_0 ET CTTOT) ;
+*
+*---------------------------------------------------------------*
+*--------- SAUVEGARDE DES DONNEES ET FIN DU PROGRAMME ----------*
+*---------------------------------------------------------------*
+*
+     OPTI SAUV 'CT_mesh.sauv' ;
+     SAUV ; 
+	 
+*
+*---------------------------------------------------------------*
+*---------------- SORTIE MED DES MAILLAGES ---------------------*
+*---------------------------------------------------------------*
+*
+     OPTI 'SORT' 'CT_mesh.med' ;
+     SORT 'MED' CTTOT ;
+*	
+
+     SINON ;
+
+*
+*---------------------------------------------------------------*
+*----- ELEMENTS DU MAILLAGE 2D POUR LES PRO. MAT ET DES CL -----*
+*---------------------------------------------------------------*
+*
+*     
+         GOUP       = TAB0 . 'GOUP' ;
+         GOUP       = CHAN ELEM0 GOUP ;
+         GOUP       = GOUP ELEM ELEM1 ;
+
+         ENTA       = TAB0 . 'ENTA' ;
+         ENTA       = ENTA ET SUENT ;
+         ENTA       = CHAN ELEM0 ENTA ;
+         ENTA       = ENTA ELEM ELEM1 ;
+         ELIM ENTA 1.E-9 ;
+		 
+         CT         = TAB0 . 'CT' ;
+         CT         = (CT ET SUCT) ;	  
+         CT         = CHAN ELEM0 CT ; 
+         CT         = CT ELEM ELEM1 ;
+         ELIM ENTA 1.E-5 ;
+		 
+         ENTA_CT    = ENTA ET CT ;
+         ELIM ENTA_CT 1.E-5 ;
+		 
+         CTTOT      = GOUP ET ENTA_CT ;
+
+         CMOD       = TAB0 . 'CMOD' POIN 'INITIAL' ;
+         CHARn      = TAB0 . 'CHARn' POIN 'INITIAL' ;
+
+         PAO        = ((a_o)+((a_i)/4)) 0. ;
+
+         PLAO_I2    = SU7 POIN 'DROI' PAO PI2 1.E-9 ;
+         CHX        = CHAN 'CHAM' (COOR PLAO_I2 1) PLAO_I2 ;
+         PLAO_I2    = CHX ELEM 'COMPRIS' (COOR PAO 1) (COOR PI2 1) ;
+         LIGNELIGA  = (CONT SU7) ELEM 'APPU' 'STRI' PLAO_I2 ;
+
+         Lg0        = CTTOT POIN 'DROI' PAO PI3 1.E-9 ;
+         CHX        = CHAN 'CHAM' (COOR Lg0 1) Lg0 ;
+         Lg0        = CHX ELEM 'COMPRIS' (COOR PAO 1) (COOR PI3 1) ;
+
+         UZ_0       = CTTOT ;
+
+         SI (GRAPH EGA VRAI) ;
+             NBE = NBEL CTTOT ;
+             TRAC CTTOT TITRE (CHAI 'MAILLAGE ('NBE' ELEMENTS)') ;
+         FINSI ;
+*	
+*---------------------------------------------------------------*
+*--------- SAUVEGARDE DES DONNEES ET FIN DU PROGRAMME ----------*
+*---------------------------------------------------------------*
+*
+         OPTI SAUV 'CT_mesh.sauv' ;
+         SAUV ;
+*
+*---------------------------------------------------------------*
+*---------------- SORTIE MED DES MAILLAGES ---------------------*
+*---------------------------------------------------------------*
+*
+         OPTI 'SORT' 'CT_mesh.med' ;
+         SORT 'MED' CTTOT ;
+*	
+*
+FINSI ;
+*
+*
+*OPTI DONN 5 ;
+FIN ;
