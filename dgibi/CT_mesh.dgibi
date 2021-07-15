@@ -2,10 +2,10 @@
 * CT maillage *
 ***************
 
-OPTI ECHO 0 ;      
+*OPTI ECHO 0 ;      
 OPTI TRAC 'PSC' ;                  
 OPTI 'FTRA' 'CT_mesh.ps' ;
-OPTI 'ERRE' 'FATAL' ;
+*OPTI 'ERRE' 'FATAL' ;
 
 'OPTI' 'ACQU' 'data_calcul.dgibi';
 
@@ -54,6 +54,7 @@ SI (BBAR0 EGA 1) ;
   LINE0 = 1 ;
 FINSI ;
 *
+
 *--------------------- OPTIONS GENERALES ---------------------------*
 SI (DIME0 'EGA' 2);
   SI (LINE0 'EGA' 1);
@@ -78,14 +79,16 @@ SI (DIME0 'EGA' 3);
     ELEM0 = 'LINEAIRE';
     ELEM1 = CUB8;
     ELEM2 = ELEM1;
+    ELEM3 = QUA4;
     SI (BBAR0 'EGA' 1);
      ELEM2 = ICC8; FINSI;
   SINON;
     ELEM0 = 'QUADRATIQUE';
     ELEM1 = CU20;
     ELEM2 = ELEM1;
+    ELEM3 = QUA8;
   FINSI;
-  OPTI DIME DIME0 ELEM ELEM1 'MODELISER' 'TRID' ;
+  OPTI DIME 2 ELEM ELEM3 ;
 FINSI;
 
 ** INDICATEUR DE TRACE
@@ -124,7 +127,7 @@ PF    = TAB0 . 'PF' POIN 'INITIAL' ;
 PG    = TAB0 . 'PG' POIN 'INITIAL' ;
 PH    = TAB0 . 'PH' POIN 'INITIAL' ;
 PI    = TAB0 . 'PI' POIN 'INITIAL' ;
-
+*
 PA1   = POIN (a_o) (0.8+(0.56799*W)) ;
 PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) ;
 PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) ;
@@ -134,8 +137,7 @@ PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) ;
 PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) ;
 PH1   = POIN (a_o) 0.8 ;
 PI1   = POIN (a_o) 0. ;
-
-
+*
 PA2   = POIN (a_f) (0.8+(0.56799*W)) ;
 PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) ;
 PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) ;
@@ -145,7 +147,7 @@ PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) ;
 PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) ;
 PH2   = POIN (a_f) 0.8 ;
 PI2   = POIN (a_f) 0. ;
-
+*
 PA3   = POIN (1.25*W) (0.8+(0.56799*W)) ;
 PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) ;
 PC3   = POIN (1.25*W) (0.8+(5*((0.26799*W)/6))) ;
@@ -177,17 +179,19 @@ PH5   = POIN (a_f+0.5) 0.8 ;
 PI5   = POIN (a_f+0.5) 0. ;
 *
 *
-*------------------------------------------------------------------*
 *--------------------- CREATION DES DROITES -----------------------*
-*------------------------------------------------------------------*
 *
 *
+* deraffinement en Y : nb d'elements grossiers vers nb d'elements fins
 NBSUPY = 12 ;
 NBINFY = 72 ;
 *
+* deraffinement en X : nb d'elements grossiers vers nb d'elements fins
+** rangee 1 (au dessus de la fissure)
 NBGAUX1 = 2 ;
 NBGAUX2 = 12 ;
 *
+** rangee 2 (fissure)
 NBGAUX3 = 2 ;
 NBGAUX4 = 8 ;
 *
@@ -201,7 +205,8 @@ DG_F = CHAN ELEM0 (TAB0. 'DG_F') ;
 DG_H = CHAN ELEM0 (TAB0. 'DG_H') ;
 DH_I = CHAN ELEM0 (TAB0. 'DH_I') ;
 
-DRT0 = DA_B ET DC_B ET DC_D ET DE_D ET DE_F ET DG_F ET DG_H ET DH_I ;
+DRT0 = DA_B ET DC_B ET DC_D ET DE_D ET DE_F 
+       ET DG_F ET DG_H ET DH_I ;
 *
 DROI1 = DROI (NBSUPY) PA1 PA2 COUL ROUG ; 
 DROI2 = DROI (NBSUPY) PB1 PB2 COUL ROUG ; 
@@ -212,7 +217,6 @@ DROI6 = DROI (NBSUPY) PF1 PF2 COUL ROUG ;
 
 DRT1  = DROI1 ET DROI2 ET DROI3 ET DROI4 ET 
         DROI5 ET DROI6 ;
-*
 *
 DROI7  = DROI (2) PA1 PB1 COUL VERT ; 
 DROI8  = DROI (2) PA2 PB2 COUL VERT ; 
@@ -329,10 +333,7 @@ DRT11 = DA3_B3 ET DC3_B3 ET DC3_D3 ET DE3_D3 ET DE3_F3 ET DG3_F3
 DRTT = DRT0 ET DRT1 ET DRT2 ET DRT3 ET DRT4 ET DRT5 ET DRT6 ET DRT7
        ET DRT8 ET DRT9 ET DRT10 ET DRT11 ;
 *
-*------------------------------------------------------------------*
 *-------------- CREATION DES CONTOURS ET SURFACES -----------------*
-*------------------------------------------------------------------*
-*
 *
 CO1 = DROI7  ET DROI1  ET DROI8  ET DROI2 ;
 CO2 = DROI9  ET DROI2  ET DROI10 ET DROI3 ;
@@ -413,12 +414,7 @@ SU37 = DROI60 REGL 2 DROI61 ;
 SU38 = DROI61 REGL 2 DROI62 ;
 SU39 = DROI62 REGL 2 DROI63 ;
 *
-*
-*
-*------------------------------------------------------------------*
 *-------------- APPLICATION DE LA PROCEDURE EN Y ------------------*
-*------------------------------------------------------------------*         
-*
 *
 UN_ETAGE = FAUX ;
 PERF_TOPO_3 = (LOG(NBINFY)-(LOG(NBSUPY)))/(LOG(3.)) ; 
@@ -446,11 +442,7 @@ SI ((PERF_TOPO_3 > 1.0001) ET (PERF_TOPO_4 > 1.0001)) ;
          SU_RAD_GROS_2 = DERAFFIN_DR DROI6 DROI17 ;
 FINSI ;
 *
-*
-*------------------------------------------------------------------*
 *------------ APPLICATION DE LA PROCEDURE EN X SUP ----------------*
-*------------------------------------------------------------------*         
-*
 *
 UN_ETAGE = FAUX ;
 PERF_TOPO_3 = (LOG(NBGAUX2)-(LOG(NBGAUX1)))/(LOG(3.)) ; 
@@ -497,11 +489,7 @@ SINON ;
 	SU_RAD_GROS_5 = DERAFFIN_DR DROI80 DROI22 ;
 FINSI ;
 *
-*
-*------------------------------------------------------------------*
 *------------ APPLICATION DE LA PROCEDURE EN X INF ----------------*
-*------------------------------------------------------------------*         
-*
 *
 UN_ETAGE = FAUX ;
 PERF_TOPO_3 = (LOG(NBGAUX4)-(LOG(NBGAUX3)))/(LOG(3.)) ; 
@@ -577,11 +565,9 @@ SU    = SUCT ET SUENT ;
 *
 
 SI (DIME0 EGA 3) ;
+  OPTI DIME DIME0 ELEM ELEM1 'MODELISER' 'TRID' ;
 
-*------------------------------------------------------------------*
 *----------------- ELEMENTS DU MAILLAGE SURFACIQUE ----------------*
-*------------------------------------------------------------------*
-*
 *     
      SI (LINE0 EGA 1) ;
 	     GOUP  = TAB0 . 'GOUP' ;
@@ -613,9 +599,7 @@ SI (DIME0 EGA 3) ;
 			 
      FINSI ;			 
 *
-*------------------------------------------------------------------*
 *------------------ PASSAGE A UN MAILLAGE VOLUMIQUE ---------------*
-*------------------------------------------------------------------*
 
      NEP = 20 ;
 
@@ -643,9 +627,7 @@ SI (DIME0 EGA 3) ;
      CTTOT1 = GOUP0 ET CT0 ET ENTA0 ;
      TRAC CACH CTTOT1 ;
 *
-*------------------------------------------------------------------*
 *-------------------- RECUPERATION DES FACES ----------------------*
-*------------------------------------------------------------------*
 *
      F1A F3A F4A = FACE ENTA0 ;
      FACE1 = (F1A ET F3A ET F4A) ;
@@ -660,9 +642,7 @@ SI (DIME0 EGA 3) ;
      F3E = (FAC1 PLUS W5) ;  
      TRAC (F3A ET F3B ET F3C ET F3D ET F3E ET FACE1) ;
 *
-*------------------------------------------------------------------*
-*----------------- ANSLATION D UNE FACE SUIVANT Y -----------------*
-*------------------------------------------------------------------*
+*----------------- TRANSLATION D UNE FACE SUIVANT Y -----------------*
 *
      F3A = F3A PLUS V1 ;
      F3B = F3B PLUS V2 ;
@@ -671,9 +651,7 @@ SI (DIME0 EGA 3) ;
      F3E = F3E PLUS V5 ;
      TRAC (F3A ET F3B ET F3C ET F3D ET F3E ET FACE1) ;
 *
-*-----------------------------------------------------------------*
 *--------------------- TRANSFORMATIONS AFFINES ---------------------*
-*-----------------------------------------------------------------*
 *
      K1 = (0.8-(R0*(SIN(60/4))))/0.8 ;
      K2 = (0.8-(R0*(SIN((2*60)/4))))/0.8 ;
@@ -696,19 +674,23 @@ SI (DIME0 EGA 3) ;
 *
      CT1 = CT0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(60/4))))) ;
      CT2 = CT1 VOLU 1 TRAN (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
-     CT3 = CT2 VOLU 1 TRAN (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
-     CT4 = CT3 VOLU 1 TRAN (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
+     CT3 = CT2 VOLU 1 TRAN 
+                (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
+     CT4 = CT3 VOLU 1 TRAN 
+                (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
      CT5 = CT4 VOLU 4 TRAN (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
 *
      GOUP1 = GOUP0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(60/4))))) ;
-     GOUP2 = GOUP1 VOLU 1 TRAN (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
-     GOUP3 = GOUP2 VOLU 1 TRAN (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
-     GOUP4 = GOUP3 VOLU 1 TRAN (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
-     GOUP5 = GOUP4 VOLU 4 TRAN (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
+     GOUP2 = GOUP1 VOLU 1 TRAN 
+                (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
+     GOUP3 = GOUP2 VOLU 1 TRAN 
+                (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
+     GOUP4 = GOUP3 VOLU 1 TRAN 
+                (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
+     GOUP5 = GOUP4 VOLU 4 TRAN 
+                (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
 *
-*-----------------------------------------------------------------*
 *----------------- GROUPES POUR LES PROP. MATERIAU ---------------*
-*-----------------------------------------------------------------*
 *
      GOUP    = GOUP5 ;
      GOUP    = CHAN ELEM0 GOUP ;
@@ -736,9 +718,7 @@ SI (DIME0 EGA 3) ;
          TRAC CACH CTTOT TITRE (CHAI 'MAILLAGE ('NBE' ELEMENTS)') ;
      FINSI ;
 *
-*----------------------------------------------------------------*
 *------------ GROUPE POUR LES CONDITIONS AUX LIMITES ------------*
-*----------------------------------------------------------------*
 *
      CMOD1       = TAB0 . 'CMOD' POIN 'INITIAL' ;
      CMOD2       = CMOD1 PLUS (0 0 6.25) ;
@@ -763,29 +743,20 @@ SI (DIME0 EGA 3) ;
      UZ_0        = CTTOT POINT 'PLAN' P1 P4 P3 0.01 COUL ROSE ;
      TRAC CACH (UZ_0 ET CTTOT) ;
 *
-*---------------------------------------------------------------*
 *--------- SAUVEGARDE DES DONNEES ET FIN DU PROGRAMME ----------*
-*---------------------------------------------------------------*
 *
      OPTI SAUV 'CT_mesh.sauv' ;
      SAUV ; 
-	 
 *
-*---------------------------------------------------------------*
 *---------------- SORTIE MED DES MAILLAGES ---------------------*
-*---------------------------------------------------------------*
 *
      OPTI 'SORT' 'CT_mesh.med' ;
      SORT 'MED' CTTOT ;
 *	
-
+* Finsi 3D
      SINON ;
-
 *
-*---------------------------------------------------------------*
 *----- ELEMENTS DU MAILLAGE 2D POUR LES PRO. MAT ET DES CL -----*
-*---------------------------------------------------------------*
-*
 *     
          GOUP       = TAB0 . 'GOUP' ;
          GOUP       = CHAN ELEM0 GOUP ;
@@ -829,23 +800,15 @@ SI (DIME0 EGA 3) ;
              TRAC CTTOT TITRE (CHAI 'MAILLAGE ('NBE' ELEMENTS)') ;
          FINSI ;
 *	
-*---------------------------------------------------------------*
 *--------- SAUVEGARDE DES DONNEES ET FIN DU PROGRAMME ----------*
-*---------------------------------------------------------------*
 *
          OPTI SAUV 'CT_mesh.sauv' ;
          SAUV ;
 *
-*---------------------------------------------------------------*
 *---------------- SORTIE MED DES MAILLAGES ---------------------*
-*---------------------------------------------------------------*
 *
          OPTI 'SORT' 'CT_mesh.med' ;
          SORT 'MED' CTTOT ;
-*	
-*
+* Finsi 2D
 FINSI ;
-*
-*
-*OPTI DONN 5 ;
 FIN ;

@@ -2,6 +2,8 @@
 *                     PROCEDURE DE DERAFFINAGE                      *
 *-------------------------------------------------------------------*
 *
+$$$$ DERAFFIN_DR
+
 DEBPROC DERAFFIN_DR LI_1*MAILLAGE LI_2*MAILLAGE;
 *FONCTIONNE SEULEMENT AVEC DES NOMBRES PAIRS D ELEMENTS
 *EXTRACTION PREMIER POINT POUR SCAN
@@ -91,4 +93,5 @@ ELIM SU 1.E-9;
 
 FINPROC SU;
 *
+$$$$
 
