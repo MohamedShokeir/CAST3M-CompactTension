@@ -17,7 +17,7 @@ OPTI 'ERRE' 'FATAL' ;
 DIME0 = val0;
 'MESS' ' 2D-3D  = ' (DIME0) ;
 
-* Elements LINE0s ou quadratiques:
+* Elements lineaires ou quadratiques:
 'ACQU' MM0*'MOT';
 'ACQU' val0*'ENTIER';
 LINE0 = val0;
@@ -29,7 +29,7 @@ LINE0 = val0;
 BBAR0 = val0;
 'MESS' ' Selective integration  = ' (BBAR0) ;
 
-* Elements a integration REDU0e:
+* Elements a integration reduite:
 'ACQU' MM0*'MOT';
 'ACQU' val0*'ENTIER';
 REDU0 = val0;
@@ -51,153 +51,47 @@ PHI  = val0;
 
 * Verification: pas d'integration selective avec elements quadratiques
 SI (BBAR0 EGA 1) ;
-  LINE0 = 0 ;
+  LINE0 = 1 ;
 FINSI ;
 *
-*-------------------------------------------------------------------*
-*                     PROCEDURE DE DERAFFINAGE                      *
-*-------------------------------------------------------------------*
-*
-DEBPROC DERAFFIN_DR LI_1*MAILLAGE LI_2*MAILLAGE;
-*FONCTIONNE SEULEMENT AVEC DES NOMBRES PAIRS D ELEMENTS
-*EXTRACTION PREMIER POINT POUR SCAN
-P_1 = LI_1 POINT 'INITIAL';
-P_2 = LI_2 POINT 'INITIAL';
-*RECUPERATION DU NOMBRE D ELEMENT SUR CHAQUE ARC
-NB_EL_INI = NBEL LI_1;
-NB_EL_FIN = NBEL LI_2;
-*DEFINITION DE LA STRATEGIE TOPOLOGIQUE OPTIMALE
-*TOPO_3 :        TOPO_4:
-*    _______         _________
-*    | |_| |         | |_|_| |
-*    |/___\|         |/__|__\| 
-*INDINCE DE PERFORMANCE EN TOPO 3 
-PERF_TOPO_3 = (LOG(NB_EL_FIN)-(LOG(NB_EL_INI)))/(LOG(3.)); 
-*INDICE DE PERFORMANCE EN TOPO 4
-PERF_TOPO_4 = (LOG(NB_EL_FIN)-(LOG(NB_EL_INI)))/(LOG(2.)); 
-
-*MESS (PERF_TOPO_3);
-*MESS (PERF_TOPO_4);
-I=0;
-*NB D ELEM DE CHAQUE ARC CORRESPOND PARFAITEMENT A UNE TOPO 3
-*CONDITION BIZARRE POUR CONTOURNER L ERREUR MACHINE DU LOG
-SI ((PERF_TOPO_3 > 0.99999) ET (PERF_TOPO_3 <EG 1.00001));
-*    MESS 'TOPO_3' ;
-    I=1;
-    REPETER ITER_1 NB_EL_INI;
-        LI_ITER_i_1 = DROIT 1 (LI_1 POINT (&ITER_1-1+1))
-                              (LI_2 POINT (&ITER_1-1*3+1));
-        LI_ITER_i = DROIT 1 (LI_1 POINT (&ITER_1+1))
-                            (LI_2 POINT (&ITER_1*3+1));
-        LIG_ITER_i_INI = DROI 1 (LI_1 POINT (&ITER_1-1+1))
-                                (LI_1 POINT (&ITER_1+1));
-        LIG_ITER_i_FIN = DROI 3 (LI_2 POINT (&ITER_1-1*3+1))
-                                (LI_2 POINT (&ITER_1*3+1));
-        SI (&ITER_1 EGA 1);
-            SU = DALLER LIG_ITER_i_INI LI_ITER_i_1
-                        LIG_ITER_i_FIN LI_ITER_i ;        
-        SINON;
-            SU = SU ET (DALLER LIG_ITER_i_INI LI_ITER_i_1
-                           LIG_ITER_i_FIN LI_ITER_i );        
-        FINSI;
-    FIN ITER_1;
-FINSI;
-
-*NB D ELEM DE CHAQUE ARC CORRESPOND PARFAITEMENT A UNE TOPO 2
-*CONDITION BIZARRE POUR CONTOURNER L ERREUR MACHINE DU LOG
-SI ((PERF_TOPO_4 > 0.99999) ET (PERF_TOPO_4 <EG 1.00001));
-*    MESS 'TOPO_4';
-    I=1;
-    REPETER ITER_1 NB_EL_INI;
-        SI ((&ITER_1/2.) EGA (&ITER_1/2));
-            LI_ITER_i_1= DROI 2 (LI_1 POINT (&ITER_1-1+1))
-                                 (LI_2 POINT (&ITER_1-1*2+1));
-            LI_ITER_i  = DROI 1 (LI_1 POINT (&ITER_1+1))
-                                 (LI_2 POINT (&ITER_1*2+1));
-        SINON;
-            LI_ITER_i_1= DROI 1 (LI_1 POINT (&ITER_1-1+1))
-                                 (LI_2 POINT (&ITER_1-1*2+1));
-            LI_ITER_i  = DROI 2 (LI_1 POINT (&ITER_1+1))
-                                 (LI_2 POINT (&ITER_1*2+1));
-        FINSI;    
-        LIG_ITER_i_INI = DROI 1 (LI_1 POINT (&ITER_1-1+1))
-                                 (LI_1 POINT (&ITER_1+1));
-        LIG_ITER_i_FIN = DROI 2 (LI_2 POINT (&ITER_1-1*2+1))
-                                 (LI_2 POINT (&ITER_1*2+1));
-        SI (&ITER_1 EGA 1);
-            SU = DALLER LIG_ITER_i_INI LI_ITER_i
-                        LIG_ITER_i_FIN LI_ITER_i_1 ;        
-        SINON;
-            SU = SU ET (DALLER LIG_ITER_i_INI LI_ITER_i 
-                        LIG_ITER_i_FIN LI_ITER_i_1 );        
-        FINSI;
-    FIN ITER_1;
-FINSI;
-*SI LES TOPOS PRECEDENTES SE SONT TOURNEES LES POUCES ON PART
-*SUR UN MAILLAGE PLUS MOCHE
-SI (I EGA 0);
-    LI_1 = DROIT 1 (LI_1 POINT 'INITIAL')
-                   (LI_2 POINT 'INITIAL');
-    LI_2 = DROIT 1 (LI_1 POINT 'FINAL')
-                   (LI_2 POINT 'FINAL');
-    SU = DALLER LI_1 LI_1 LI_2 LI_2;
-FINSI;
-
-ELIM SU 1.E-9;
-
-FINPROC SU;
-*
-SI (DIME0 EGA 3) ;
-*
-*-------------------------------------------------------------------*
 *--------------------- OPTIONS GENERALES ---------------------------*
-*-------------------------------------------------------------------*
-*
-    SI (LINE0 EGA 1) ;
-        ELEM0 = 'LINE0' ;
-	    ELEM1 = CUB8 ;
-        SI (REDU0 EGA 1) ;
-            ELEM2 = ICC8 ;
-	    FINSI ;
-        SINON ;
-             ELEM0 = 'QUADRATIQUE' ;
-		     ELEM1 = CU20 ;
-             SI (REDU0 EGA 1) ;
-	              ELEM2 = CU20RI ;
-		     FINSI ;
-    FINSI ;
-    OPTI DIME DIME0 ELEM ELEM1 'MODELISER' 'TRID' ;
-    OPTI EPSI UTILISATEUR ;
-*
+SI (DIME0 'EGA' 2);
+  SI (LINE0 'EGA' 1);
+    ELEM0 = 'LINEAIRE';
+    ELEM1 = QUA4;
+    ELEM2 = ELEM1;
+    SI (REDU0 'EGA' 1);
+     ELEM2 = Q4RI; FINSI;
+    SI (BBAR0 'EGA' 1);
+     ELEM2 = ICQ4; FINSI;
+  SINON;
+    ELEM0 = 'QUADRATIQUE';
+    ELEM1 = QUA8;
+    ELEM2 = ELEM1;
+    SI (REDU0 'EGA' 1);
+     ELEM2 = Q8RI; FINSI;
+  FINSI;
+  OPTI DIME DIME0 ELEM ELEM1 MODE PLAN DEFO ;
+FINSI;
+SI (DIME0 'EGA' 3);
+  SI (LINE0 'EGA' 1);
+    ELEM0 = 'LINEAIRE';
+    ELEM1 = CUB8;
+    ELEM2 = ELEM1;
+    SI (BBAR0 'EGA' 1);
+     ELEM2 = ICC8; FINSI;
+  SINON;
+    ELEM0 = 'QUADRATIQUE';
+    ELEM1 = CU20;
+    ELEM2 = ELEM1;
+  FINSI;
+  OPTI DIME DIME0 ELEM ELEM1 'MODELISER' 'TRID' ;
+FINSI;
+
 ** INDICATEUR DE TRACE
 GRAPH = VRAI ;
 *
-    SINON ;
-
-        SI (LINE0 EGA 1) ;
-            ELEM0 = 'LINE0' ;
-	        ELEM1 = QUA4 ;
-            SI (REDU0 EGA 1) ;
-                ELEM2 = Q4RI ;
-	        FINSI ;
-            SINON ;
-                 ELEM0 = 'QUADRATIQUE' ;
-		         ELEM1 = QUA8 ;
-                 SI (REDU0 EGA 1) ;
-	                 ELEM2 = Q8RI ;
-		         FINSI ;
-        FINSI ;
-        OPTI DIME DIME0 ELEM ELEM1 MODE PLAN DEFO ;
-        OPTI EPSI UTILISATEUR ;
-*
-**INDICATEUR DE TRACE
-GRAPH = VRAI ;
-*
-FINSI ;
-*
-*-------------------------------------------------------------------*
-*------------ PARAMETRES GEOMETRIQUES, MATERIAUC ET CL -------------*
-*-------------------------------------------------------------------*
+*------------ PARAMETRES GEOMETRIQUES, MATERIAUX ET CL -------------*
 ** GEOMETRIE CT
 *
 W = 25. ;
@@ -206,23 +100,19 @@ a_f = 7. ;
 a_i = a_f ;
 a = (0.25*W);
 a_o = (a_o+a) ;
-*LIST a_o ;
 a_f = (a_f+a_o) ;
-*LIST a_f ;
 *
+* rayon de l'entaille laterale: 
 R0    = 0.25 ;
+* ??
 EPA   = 1.E-2 ;
 B     = 12.5 ;
 *
 *--------------------------- MAILLAGE ------------------------------*
 *
-*
 TAB0 = LIRE 'MED' 'Ct.med' ;
-*LIST TAB0 ;
 *
-*-------------------------------------------------------------------*
 *-------------- POINTS POUR LA CONSTRUCTION DES LIGNES -------------*
-*-------------------------------------------------------------------*
 *
 *
 PA    = TAB0 . 'PA' POIN 'INITIAL' ;
@@ -235,112 +125,56 @@ PG    = TAB0 . 'PG' POIN 'INITIAL' ;
 PH    = TAB0 . 'PH' POIN 'INITIAL' ;
 PI    = TAB0 . 'PI' POIN 'INITIAL' ;
 
-SI (DIME0 EGA 3) ;
-
-     PA1   = POIN (a_o) (0.8+(0.56799*W)) 0. ;
-     PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) 0. ;
-     PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) 0. ;
-     PD1   = POIN (a_o) (0.8+(4*((0.26799*W)/6))) 0. ;
-     PE1   = POIN (a_o) (0.8+(3*((0.26799*W)/6))) 0. ;
-     PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) 0. ;
-     PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) 0. ;
-     PH1   = POIN (a_o) 0.8 0. ;
-     PI1   = POIN (a_o) 0. 0. ;
+PA1   = POIN (a_o) (0.8+(0.56799*W)) ;
+PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) ;
+PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) ;
+PD1   = POIN (a_o) (0.8+(4*((0.26799*W)/6))) ;
+PE1   = POIN (a_o) (0.8+(3*((0.26799*W)/6))) ;
+PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) ;
+PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) ;
+PH1   = POIN (a_o) 0.8 ;
+PI1   = POIN (a_o) 0. ;
 
 
-     PA2   = POIN (a_f) (0.8+(0.56799*W)) 0. ;
-     PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) 0. ;
-     PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) 0. ;
-     PD2   = POIN (a_f) (0.8+(4*((0.26799*W)/6))) 0. ;
-     PE2   = POIN (a_f) (0.8+(3*((0.26799*W)/6))) 0. ;
-     PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) 0. ;
-     PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) 0. ;
-     PH2   = POIN (a_f) 0.8 0. ;
-     PI2   = POIN (a_f) 0. 0. ;
+PA2   = POIN (a_f) (0.8+(0.56799*W)) ;
+PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) ;
+PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) ;
+PD2   = POIN (a_f) (0.8+(4*((0.26799*W)/6))) ;
+PE2   = POIN (a_f) (0.8+(3*((0.26799*W)/6))) ;
+PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) ;
+PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) ;
+PH2   = POIN (a_f) 0.8 ;
+PI2   = POIN (a_f) 0. ;
 
-     PA3   = POIN (1.25*W) (0.8+(0.56799*W)) 0. ;
-     PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) 0. ;
-     PC3   = POIN (1.25*W) (0.8+(5*((0.26799*W)/6))) 0. ;
-     PD3   = POIN (1.25*W) (0.8+(4*((0.26799*W)/6))) 0. ;
-     PE3   = POIN (1.25*W) (0.8+(3*((0.26799*W)/6))) 0. ;
-     PF3   = POIN (1.25*W) (0.8+(2*((0.26799*W)/6))) 0. ;
-     PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) 0. ;
-     PH3   = POIN (1.25*W) 0.8 0. ;
-     PI3   = POIN (1.25*W) 0. 0. ;
+PA3   = POIN (1.25*W) (0.8+(0.56799*W)) ;
+PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) ;
+PC3   = POIN (1.25*W) (0.8+(5*((0.26799*W)/6))) ;
+PD3   = POIN (1.25*W) (0.8+(4*((0.26799*W)/6))) ;
+PE3   = POIN (1.25*W) (0.8+(3*((0.26799*W)/6))) ;
+PF3   = POIN (1.25*W) (0.8+(2*((0.26799*W)/6))) ;
+PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) ;
+PH3   = POIN (1.25*W) 0.8 ;
+PI3   = POIN (1.25*W) 0. ;
 *
-     PA4   = POIN (a_o-0.5) (0.8+(0.56799*W)) 0. ;
-     PB4   = POIN (a_o-0.5) (0.8+(6*((0.26799*W)/6))) 0. ;
-     PC4   = POIN (a_o-0.5) (0.8+(5*((0.26799*W)/6))) 0. ;
-     PD4   = POIN (a_o-0.5) (0.8+(4*((0.26799*W)/6))) 0. ;
-     PE4   = POIN (a_o-0.5) (0.8+(3*((0.26799*W)/6))) 0. ;
-     PF4   = POIN (a_o-0.5) (0.8+(2*((0.26799*W)/6))) 0. ;
-     PG4   = POIN (a_o-0.5) (0.8+(1*((0.26799*W)/6))) 0. ;
-     PH4   = POIN (a_o-0.5) 0.8 0. ;
-     PI4   = POIN (a_o-0.3) 0. 0. ;
+PA4   = POIN (a_o-0.5) (0.8+(0.56799*W)) ;
+PB4   = POIN (a_o-0.5) (0.8+(6*((0.26799*W)/6))) ;
+PC4   = POIN (a_o-0.5) (0.8+(5*((0.26799*W)/6))) ;
+PD4   = POIN (a_o-0.5) (0.8+(4*((0.26799*W)/6))) ;
+PE4   = POIN (a_o-0.5) (0.8+(3*((0.26799*W)/6))) ;
+PF4   = POIN (a_o-0.5) (0.8+(2*((0.26799*W)/6))) ;
+PG4   = POIN (a_o-0.5) (0.8+(1*((0.26799*W)/6))) ;
+PH4   = POIN (a_o-0.5) 0.8 ;
+PI4   = POIN (a_o-0.3) 0. ;
 *
-     PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) 0. ;
-     PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) 0. ;
-     PC5   = POIN (a_f+0.5) (0.8+(5*((0.26799*W)/6))) 0. ;
-     PD5   = POIN (a_f+0.5) (0.8+(4*((0.26799*W)/6))) 0. ;
-     PE5   = POIN (a_f+0.5) (0.8+(3*((0.26799*W)/6))) 0. ;
-     PF5   = POIN (a_f+0.5) (0.8+(2*((0.26799*W)/6))) 0. ;
-     PG5   = POIN (a_f+0.5) (0.8+(1*((0.26799*W)/6))) 0. ;
-     PH5   = POIN (a_f+0.5) 0.8 0. ;
-     PI5   = POIN (a_f+0.5) 0. 0. ;
-	
-	SINON ;
-	      PA1   = POIN (a_o) (0.8+(0.56799*W)) ;
-          PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) ;
-          PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) ;
-          PD1   = POIN (a_o) (0.8+(4*((0.26799*W)/6))) ;
-          PE1   = POIN (a_o) (0.8+(3*((0.26799*W)/6))) ;
-          PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) ;
-          PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) ;
-          PH1   = POIN (a_o) 0.8 ;
-          PI1   = POIN (a_o) 0. ;
-
-
-          PA2   = POIN (a_f) (0.8+(0.56799*W)) ;
-          PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) ;
-          PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) ;
-          PD2   = POIN (a_f) (0.8+(4*((0.26799*W)/6))) ;
-          PE2   = POIN (a_f) (0.8+(3*((0.26799*W)/6))) ;
-          PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) ;
-          PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) ;
-          PH2   = POIN (a_f) 0.8 ;
-          PI2   = POIN (a_f) 0. ;
-
-          PA3   = POIN (1.25*W) (0.8+(0.56799*W)) ;
-          PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) ;
-          PC3   = POIN (1.25*W) (0.8+(5*((0.26799*W)/6))) ;
-          PD3   = POIN (1.25*W) (0.8+(4*((0.26799*W)/6))) ;
-          PE3   = POIN (1.25*W) (0.8+(3*((0.26799*W)/6))) ;
-          PF3   = POIN (1.25*W) (0.8+(2*((0.26799*W)/6))) ;
-          PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) ;
-          PH3   = POIN (1.25*W) 0.8 ;
-          PI3   = POIN (1.25*W) 0. ;
-*
-          PA4   = POIN (a_o-0.5) (0.8+(0.56799*W)) ;
-          PB4   = POIN (a_o-0.5) (0.8+(6*((0.26799*W)/6))) ;
-          PC4   = POIN (a_o-0.5) (0.8+(5*((0.26799*W)/6))) ;
-          PD4   = POIN (a_o-0.5) (0.8+(4*((0.26799*W)/6))) ;
-          PE4   = POIN (a_o-0.5) (0.8+(3*((0.26799*W)/6))) ;
-          PF4   = POIN (a_o-0.5) (0.8+(2*((0.26799*W)/6))) ;
-          PG4   = POIN (a_o-0.5) (0.8+(1*((0.26799*W)/6))) ;
-          PH4   = POIN (a_o-0.5) 0.8 ;
-          PI4   = POIN (a_o-0.3) 0. ;
-*
-          PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) ;
-          PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) ;
-          PC5   = POIN (a_f+0.5) (0.8+(5*((0.26799*W)/6))) ;
-          PD5   = POIN (a_f+0.5) (0.8+(4*((0.26799*W)/6))) ;
-          PE5   = POIN (a_f+0.5) (0.8+(3*((0.26799*W)/6))) ;
-          PF5   = POIN (a_f+0.5) (0.8+(2*((0.26799*W)/6))) ;
-          PG5   = POIN (a_f+0.5) (0.8+(1*((0.26799*W)/6))) ;
-          PH5   = POIN (a_f+0.5) 0.8 ;
-          PI5   = POIN (a_f+0.5) 0. ;
-*
-FINSI ;
+PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) ;
+PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) ;
+PC5   = POIN (a_f+0.5) (0.8+(5*((0.26799*W)/6))) ;
+PD5   = POIN (a_f+0.5) (0.8+(4*((0.26799*W)/6))) ;
+PE5   = POIN (a_f+0.5) (0.8+(3*((0.26799*W)/6))) ;
+PF5   = POIN (a_f+0.5) (0.8+(2*((0.26799*W)/6))) ;
+PG5   = POIN (a_f+0.5) (0.8+(1*((0.26799*W)/6))) ;
+PH5   = POIN (a_f+0.5) 0.8 ;
+PI5   = POIN (a_f+0.5) 0. ;
 *
 *
 *------------------------------------------------------------------*

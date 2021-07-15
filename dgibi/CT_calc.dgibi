@@ -16,7 +16,7 @@ OPTI 'ERRE' 'FATAL' ;
 DIME0 = val0;
 'MESS' ' 2D-3D  = ' (DIME0) ;
 
-* Elements LINE0s ou quadratiques:
+* Elements lineaires ou quadratiques:
 'ACQU' MM0*'MOT';
 'ACQU' val0*'ENTIER';
 LINE0 = val0;
@@ -28,7 +28,7 @@ LINE0 = val0;
 BBAR0 = val0;
 'MESS' ' Selective integration  = ' (BBAR0) ;
 
-* Elements a integration REDU0e:
+* Elements a integration reduite:
 'ACQU' MM0*'MOT';
 'ACQU' val0*'ENTIER';
 REDU0 = val0;
@@ -58,18 +58,36 @@ OPTI EPSI 'UTILISATEUR' ;
 
 SI (DIME0 'EGA' 2);
   SI (LINE0 'EGA' 1);
+    ELEM0 = 'LINEAIRE';
     ELEM1 = QUA4;
     ELEM2 = ELEM1;
+    SI (REDU0 'EGA' 1);
+     ELEM2 = Q4RI; FINSI;
+    SI (BBAR0 'EGA' 1);
+     ELEM2 = ICQ4; FINSI;
   SINON;
+    ELEM0 = 'QUADRATIQUE';
     ELEM1 = QUA8;
-    ELEM2 = QUA8; 
+    ELEM2 = ELEM1;
+    SI (REDU0 'EGA' 1);
+     ELEM2 = Q8RI; FINSI;
   FINSI;
 FINSI;
 SI (DIME0 'EGA' 3);
   SI (LINE0 'EGA' 1);
+    ELEM0 = 'LINEAIRE';
     ELEM1 = CUB8;
+    ELEM2 = ELEM1;
+    SI (REDU0 'EGA' 1);
+     ELEM2 = ''; FINSI;
+    SI (BBAR0 'EGA' 1);
+     ELEM2 = ICC8; FINSI;
   SINON;
+    ELEM0 = 'QUADRATIQUE';
     ELEM1 = CU20;
+    ELEM2 = ELEM1;
+    SI (REDU0 'EGA' 1);
+     ELEM2 = ''; FINSI;
   FINSI;
 FINSI;
 
@@ -101,7 +119,7 @@ T     = 25. ;
 
 ** MATERIAU GOUPILLE 
 *********************
- MOD1   = 'MODE' GOUP 'MECANIQUE' 'ELASTIQUE' 'ISOTROPE'; 
+ MOD1   = 'MODE' GOUP 'MECANIQUE' 'ELASTIQUE' 'ISOTROPE' ; 
  MAT1   = 'MATE' MOD1 'YOUN' YOUN0 'NU' NU 'RHO' RHO0 ;
 
 ** MATERIAU LIGAMENT ET CT 
@@ -208,7 +226,6 @@ TFIN  = 1. ;
 EV0   = 'EVOL' 'MANU' TEMPS ('PROG' 0. TFIN) Y ('PROG' 0. 1. ) ; 
 CHA0  = 'CHAR' 'DIMP' DEP1 EV0 ;
 *
-MESS PHI;
 CHPHI = 'MANU' 'CHPO' CTTOT 1 'PHI' PHI ;
 EV1   = 'EVOL' 'MANU' TEMPS ( 'PROG' 0. TFIN ) Y ( 'PROG' 1. 1. ) ; 
 CHA1  = 'CHAR' 'PHI' CHPHI EV1 ; 

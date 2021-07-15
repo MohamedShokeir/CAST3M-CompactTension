@@ -1,0 +1,94 @@
+*-------------------------------------------------------------------*
+*                     PROCEDURE DE DERAFFINAGE                      *
+*-------------------------------------------------------------------*
+*
+DEBPROC DERAFFIN_DR LI_1*MAILLAGE LI_2*MAILLAGE;
+*FONCTIONNE SEULEMENT AVEC DES NOMBRES PAIRS D ELEMENTS
+*EXTRACTION PREMIER POINT POUR SCAN
+P_1 = LI_1 POINT 'INITIAL';
+P_2 = LI_2 POINT 'INITIAL';
+*RECUPERATION DU NOMBRE D ELEMENT SUR CHAQUE ARC
+NB_EL_INI = NBEL LI_1;
+NB_EL_FIN = NBEL LI_2;
+*DEFINITION DE LA STRATEGIE TOPOLOGIQUE OPTIMALE
+*TOPO_3 :        TOPO_4:
+*    _______         _________
+*    | |_| |         | |_|_| |
+*    |/___\|         |/__|__\| 
+*INDINCE DE PERFORMANCE EN TOPO 3 
+PERF_TOPO_3 = (LOG(NB_EL_FIN)-(LOG(NB_EL_INI)))/(LOG(3.)); 
+*INDICE DE PERFORMANCE EN TOPO 4
+PERF_TOPO_4 = (LOG(NB_EL_FIN)-(LOG(NB_EL_INI)))/(LOG(2.)); 
+
+*MESS (PERF_TOPO_3);
+*MESS (PERF_TOPO_4);
+I=0;
+*NB D ELEM DE CHAQUE ARC CORRESPOND PARFAITEMENT A UNE TOPO 3
+*CONDITION BIZARRE POUR CONTOURNER L ERREUR MACHINE DU LOG
+SI ((PERF_TOPO_3 > 0.99999) ET (PERF_TOPO_3 <EG 1.00001));
+*    MESS 'TOPO_3' ;
+    I=1;
+    REPETER ITER_1 NB_EL_INI;
+        LI_ITER_i_1 = DROIT 1 (LI_1 POINT (&ITER_1-1+1))
+                              (LI_2 POINT (&ITER_1-1*3+1));
+        LI_ITER_i = DROIT 1 (LI_1 POINT (&ITER_1+1))
+                            (LI_2 POINT (&ITER_1*3+1));
+        LIG_ITER_i_INI = DROI 1 (LI_1 POINT (&ITER_1-1+1))
+                                (LI_1 POINT (&ITER_1+1));
+        LIG_ITER_i_FIN = DROI 3 (LI_2 POINT (&ITER_1-1*3+1))
+                                (LI_2 POINT (&ITER_1*3+1));
+        SI (&ITER_1 EGA 1);
+            SU = DALLER LIG_ITER_i_INI LI_ITER_i_1
+                        LIG_ITER_i_FIN LI_ITER_i ;        
+        SINON;
+            SU = SU ET (DALLER LIG_ITER_i_INI LI_ITER_i_1
+                           LIG_ITER_i_FIN LI_ITER_i );        
+        FINSI;
+    FIN ITER_1;
+FINSI;
+
+*NB D ELEM DE CHAQUE ARC CORRESPOND PARFAITEMENT A UNE TOPO 2
+*CONDITION BIZARRE POUR CONTOURNER L ERREUR MACHINE DU LOG
+SI ((PERF_TOPO_4 > 0.99999) ET (PERF_TOPO_4 <EG 1.00001));
+*    MESS 'TOPO_4';
+    I=1;
+    REPETER ITER_1 NB_EL_INI;
+        SI ((&ITER_1/2.) EGA (&ITER_1/2));
+            LI_ITER_i_1= DROI 2 (LI_1 POINT (&ITER_1-1+1))
+                                 (LI_2 POINT (&ITER_1-1*2+1));
+            LI_ITER_i  = DROI 1 (LI_1 POINT (&ITER_1+1))
+                                 (LI_2 POINT (&ITER_1*2+1));
+        SINON;
+            LI_ITER_i_1= DROI 1 (LI_1 POINT (&ITER_1-1+1))
+                                 (LI_2 POINT (&ITER_1-1*2+1));
+            LI_ITER_i  = DROI 2 (LI_1 POINT (&ITER_1+1))
+                                 (LI_2 POINT (&ITER_1*2+1));
+        FINSI;    
+        LIG_ITER_i_INI = DROI 1 (LI_1 POINT (&ITER_1-1+1))
+                                 (LI_1 POINT (&ITER_1+1));
+        LIG_ITER_i_FIN = DROI 2 (LI_2 POINT (&ITER_1-1*2+1))
+                                 (LI_2 POINT (&ITER_1*2+1));
+        SI (&ITER_1 EGA 1);
+            SU = DALLER LIG_ITER_i_INI LI_ITER_i
+                        LIG_ITER_i_FIN LI_ITER_i_1 ;        
+        SINON;
+            SU = SU ET (DALLER LIG_ITER_i_INI LI_ITER_i 
+                        LIG_ITER_i_FIN LI_ITER_i_1 );        
+        FINSI;
+    FIN ITER_1;
+FINSI;
+*SI LES TOPOS PRECEDENTES SE SONT TOURNEES LES POUCES ON PART
+*SUR UN MAILLAGE PLUS MOCHE
+SI (I EGA 0);
+    LI_1 = DROIT 1 (LI_1 POINT 'INITIAL')
+                   (LI_2 POINT 'INITIAL');
+    LI_2 = DROIT 1 (LI_1 POINT 'FINAL')
+                   (LI_2 POINT 'FINAL');
+    SU = DALLER LI_1 LI_1 LI_2 LI_2;
+FINSI;
+
+ELIM SU 1.E-9;
+
+FINPROC SU;
+*
+
