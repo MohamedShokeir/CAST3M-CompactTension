@@ -6,10 +6,6 @@ $$$$ PERSO1
 
 DEBP PERSO1 TAB1*'TABLE' ;
 *
-*AVEC ENDOMMAGEMENT OU SANS ENDOMMAGEMENT {0|1}
-*----------------------------------------------
-*GTN = 1 ;
-*
 MO1   = TAB1.WTABLE.'MO_TOT' ;
 MA1   = TAB1.WTABLE.'MA_TOT' ;
 MAIL1 = 'EXTRAIRE' MO1 'MAIL' ;
@@ -26,18 +22,17 @@ FINSI ;
 
 'SI'( ('DIME' TAB1.DEPLACEMENTS) > 1) ;
         
-         SVTK (TAB1.'ESTIMATION') MO1 'TEST' TAB1.'IND' ;
-*        VISUPG MO1 (SVTK (TAB1.'ESTIMATION') MO1 'TEST' TAB1.'IND') ;
-         TAB1.'IND' = TAB1.'IND' '+' 1 ;
+*  SVTK (TAB1.'ESTIMATION') MO1 'CT_node' TAB1.'IND';
+  VISUPG MO1 (SVTK (TAB1.'ESTIMATION') MO1 'CT' TAB1.'IND');
+  TAB1.'IND' = TAB1.'IND' '+' 1 ;
 		
-	 
-         'SI' ('EXISTE' LTPC (TAB1.WTABLE.TEMPS0) 1.e-6) ;  
+  'SI' ('EXISTE' LTPC (TAB1.WTABLE.TEMPS0) 1.e-6) ;  
 
-             SVTK (TAB1.'ESTIMATION') MO1 'TEST' TAB1.'IND' ;
-*            VISUPG MO1 (SVTK (TAB1.'ESTIMATION') MO1 'TEST' TAB1.'IND') ;
-             TAB1.'IND' = TAB1.'IND' '+' 1 ;
+*    SVTK (TAB1.'ESTIMATION') MO1 'CT_node' TAB1.'IND' ;
+    VISUPG MO1 (SVTK (TAB1.'ESTIMATION') MO1 'CT' TAB1.'IND') ;
+    TAB1.'IND' = TAB1.'IND' '+' 1 ;
 	 
-         'FINSI' ;
+  'FINSI' ;
    
 FINSI ;
 
@@ -46,30 +41,35 @@ FINSI ;
 *                  FORCE - DEPLACEMENT                   *
 **********************************************************
 *
-MESS 'DEBUT FORCE - DEPLACEMENT' ;
+*MESS 'DEBUT FORCE - DEPLACEMENT' ;
 *
 'SI'( ('DIME' TAB1.DEPLACEMENTS) > 1) ;
 
-      SI (DIME0 EGA 3);
-             TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD1) ;
-	         SINON ;
-                 TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD) ;
-	  FINSI ;
-      TMP2 = 'EXCO' TAB1.ESTIMATION.REACTIONS 'FY' ;
-      UN = 'MANUEL' CHPO CHARn 1 'SCAL' 1. ;
-      TMP2 = ABS('XTY' TMP2 UN ('MOTS' 'SCAL') ('MOTS' 'SCAL')) ;
+  SI (DIME0 EGA 3);
+    TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD1) ;
+  SINON ;
+    TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD) ;
+  FINSI ;
+    TMP2 = 'EXCO' TAB1.ESTIMATION.REACTIONS 'FY' ;
+    UN = 'MANUEL' CHPO CHARn 1 'SCAL' 1. ;
+    TMP2 = ABS('XTY' TMP2 UN ('MOTS' 'SCAL') ('MOTS' 'SCAL')) ;
+    SI (DIME0 'EGA' 3);
+      TAB1.DEP = TAB1.DEP 'ET' ('PROG' TMP1*2.) ;
+      TAB1.FOR = TAB1.FOR 'ET' ('PROG' TMP2*2.) ;
+    SINON;
       TAB1.DEP = TAB1.DEP 'ET' ('PROG' TMP1) ;
       TAB1.FOR = TAB1.FOR 'ET' ('PROG' TMP2) ;
-      F = EXTR (TAB1.FOR) (DIME (TAB1.FOR)) ;
-      FMAX = MAXI (TAB1.FOR) ;
+    FINSI;
+    F = EXTR (TAB1.FOR) (DIME (TAB1.FOR)) ;
+    FMAX = MAXI (TAB1.FOR) ;
 
-      'OPTION' 'SORTIR' 'force_dep.csv' ;
-      'SORTIR' EXCE TAB1.DEP TAB1.FOR SEPA TABU ;
+   'OPTION' 'SORTIR' 'force_cmod.csv' ;
+   'SORTIR' EXCE TAB1.DEP TAB1.FOR SEPA TABU ;
 
 FINSI ;
 
 *
-MESS 'FIN FORCE - DEPLACEMENT' ;
+*MESS 'FIN FORCE - DEPLACEMENT' ;
 *
 SI (GTN EGA 1) ;
 
@@ -78,7 +78,9 @@ SI (GTN EGA 1) ;
 ************************************************************
 
      SI (DIME0 EGA 3) ;
-         LIGNELIGA3 = MAIL1 POINT 'PLAN' (0. 0. 0.) (1. 0. 0.) (0. 0. 1) 1.E-9 ;
+       CHX CHY CHZ = COOR Lg0;
+       LIGNELIGA3 = POINT CHX 'INFERIEUR' (a_0+a_f);
+*         LIGNELIGA3 = MAIL1 POINT 'PLAN' (0. 0. 0.) (1. 0. 0.) (0. 0. 1) 1.E-9 ;
      	 LIGA       = MAIL1 ELEM 'APPUYE' 'LARGEMENT' LIGNELIGA3 ;
      	 SINON ;
              LIGA   = MAIL1 ELEM APPUYE LARGEMENT LIGNELIGA ;
@@ -110,7 +112,7 @@ SI (GTN EGA 1) ;
 *      CALCUL DE LA POROSITE MOYENNE SUR LE LIGAMENT ET SON EVOL. ENTRE 2 PAS DE TEMPS    *
 *******************************************************************************************
 *
-MESS 'DEBUT PORO MOY. ET VARIA PORO LIGAMENT' ;
+*MESS 'DEBUT PORO MOY. ET VARIA PORO LIGAMENT' ;
 *
 * NOUVEAU MODELE ASSOCIE AUX MAILLES DE LA LIGNE INF. DU LIGA *
 *--------------------------------------------------------------
@@ -192,18 +194,17 @@ MESS 'DEBUT PORO MOY. ET VARIA PORO LIGAMENT' ;
 	
 * NOMBRE DE POINTS DE GAUSS *
 *----------------------------
-     
-	 SI (DIME0 EGA 3);
-             NBPG = 8 ;
-			 SINON ;
-                 NBPG = 4 ;
-     FINSI ;
-     NELEM     = NBEL LIGA ;
+  SI (DIME0 EGA 3);
+    NBPG = 8 ;
+  SINON ;
+    NBPG = 4 ;
+  FINSI ;
+  NELEM     = NBEL LIGA ;
 *    LIST (NELEM) ;
-     CHMFISS   = MANU 'CHAM' MOLIGA 'POSI' GRAVITE SCAL 1 1 0. ;
-     NBPGCAST  = 0 ;
-     NBPGCAST0 = 0 ;
-     NBPGCAST1 = 0 ;
+  CHMFISS   = MANU 'CHAM' MOLIGA 'POSI' GRAVITE SCAL 1 1 0. ;
+  NBPGCAST  = 0 ;
+  NBPGCAST0 = 0 ;
+  NBPGCAST1 = 0 ;
 
 **************************************************
 * SUPRESSION DES ELEMENTS CASSES SUR LE LIGAMENT *
@@ -344,68 +345,10 @@ MESS '************************************************************************' 
 		 FINSI ;
 	 FINSI ;
 *
-************************************
-*       SAUVEGARDE DES DONNEES     *
-************************************
-
-MESS 'DEBUT SAUVERGADE DES DONNEES' ;
-
-     SI (('DIME' TAB1.DEPLACEMENTS) > 1) ;
-           
-		   SI (DIME0 EGA 3) ;
-                 OPTI SAUV 'CT3D_ENDO_post1.sauv' ;
-		         
-                 SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0   
-		         LTPS LTPC GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 SIG0  
-		         YOUN0 YOUN1 NU RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3   
-		         PHI MODIN ESF CLM F00 FR0 MESO1 MAIL1 MO1 MA1 ;
-	 
-      
-                 SI ((((NBEL (LGA)) < 4) OU ((NBEL (LGA)) EGA 4)) ET (MCAV2 > (F00*2.))) ;
-		        
-                        OPTI SAUV 'CT3D_ENDO_post2.sauv' ;
-		        
-                        SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0   
-		                LTPS LTPC GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 SIG0  
-		                YOUN0 YOUN1 NU RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3   
-		                PHI MODIN ESF CLM F00 FR0 MESO1 MAIL1 MO1 MA1 ;
-                       
-     	        	    FIN ;
-        
-                 FINSI ;
-				 SINON ;
-                     OPTI SAUV 'CT2D_ENDO_post1.sauv' ;
-		             
-                     SAUV TAB0 TAB0 TAB1 PA PB PC CHARn DIME0 ESF CMOD CHA0 CLM LTPS  
-				     GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 SIG0 YOUN0 YOUN1 NU 
-				     RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 MODIN PHI LIGNELIGA
-				     MODTOT MATTOT F00 FR0 LTPC ;
-	 			     	 
-      			     	 
-                     SI ((((NBEL (LGA)) < 4) OU ((NBEL (LGA)) EGA 4)) ET (MCAV2 > (F00*2.))) ;				 
-		             				 
-                            OPTI SAUV 'CT2D_ENDO_post2.sauv' ;				 
-		             				 
-                            SAUV TAB0 TAB0 TAB1 PA PB PC CHARn DIME0 ESF CMOD CHA0 CLM LTPS  
-				            GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 SIG0 YOUN0 YOUN1 NU 
-				            RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 MODIN PHI LIGNELIGA
-				            MODTOT MATTOT F00 FR0 LTPC ;				 
-                           				 
-     	             	    FIN ;	
-                     FINSI ;							
-				 
-		   FINSI ;	 
-				 
-       
-     FINSI ;
-*
-MESS 'FIN SAUVERGADE DES DONNEES' ;
-*
-MESS 'DEBUT DE L ESTIMATION DE L INCREMMENT DE PORO' ;
-
 **************************************************
 *  ESTIMATION DE L INCREMENT MAXIMAL DE POSOSITE *
 **************************************************
+*MESS 'DEBUT DE L ESTIMATION DE L INCREMMENT DE PORO' ;
 
      'SI'(('DIME' TAB1.DEPLACEMENTS) > 1) ;
      
@@ -442,35 +385,37 @@ MESS 'DEBUT DE L ESTIMATION DE L INCREMMENT DE PORO' ;
      TAB1.WTABLE.'DF' = DF ;
      TAB1.WTABLE.'DFMAX' = TAB1.'DFMAX' ;
 
-MESS 'FIN DE L ESTIMATION DE L INCREMMENT DE PORO' ;
+*MESS 'FIN DE L ESTIMATION DE L INCREMMENT DE PORO' ;
 
 FINSI ;
 
-SI (GTN EGA 0) ;
-     SI (('DIME' TAB1.DEPLACEMENTS) > 1) ;
-           	
-     	   SI (DIME0 EGA 3) ;
-                 OPTI SAUV 'CT3D_VOCE_post1.sauv' ;
-     	         
-                 SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0 ALPHA  
-		         LTPS LTPC GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 SIG0 T 
-		         YOUN0 YOUN1 NU RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 VOCE  
-		         PHI MODIN ESF EAF CHA1 CLM ;
-     
-     			 SINON ;
-                     OPTI SAUV 'CT2D_VOCE_post1.sauv' ;
-     	             
-                     SAUV TAB0 TAB0 TAB1 PA PB PC CHARn DIME0 ESF CMOD CHA0 CLM LTPS  
-     			     GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 SIG0 YOUN0 YOUN1 NU 
-     			     RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 MODIN PHI LIGNELIGA
-     			     MODTOT MATTOT F00 FR0 LTPC ;
-     			     	 			
-     			 
-     	   FINSI ;	 
-			 
-     FINSI ;
-	 
-FINSI ;
+
+************************************
+*       SAUVEGARDE DES DONNEES     *
+************************************
+
+*MESS 'DEBUT SAUVERGADE DES DONNEES' ;
+
+SI (('DIME' TAB1.DEPLACEMENTS) > 1) ;
+  OPTI SAUV 'CT_calc1.sauv' ;
+  SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0 ALPHA  
+  LTPS LTPC GOUP ENTA ENTA_CT LIGNELIGA CTTOT MOD1 MOD2 MAT1 MAT2 
+  YOUN0 YOUN1 NU RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 VOCE  
+  PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT;	
+
+  SI (GTN 'EGA' 1);
+    SI ((((NBEL (LGA)) < 4) OU ((NBEL (LGA)) EGA 4)) 
+      ET (MCAV2 > (F00*2.))) ; 
+      FIN ; 
+    FINSI; 
+  FINSI;
+ 
+FINSI; 
+
+*
+*MESS 'FIN SAUVERGADE DES DONNEES' ;
+*
+
 	 
 'FINPROC' ;
 

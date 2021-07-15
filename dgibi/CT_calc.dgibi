@@ -2,10 +2,17 @@
 * CT calcul *
 *************
 
-OPTI ECHO 0 ; 
+*OPTI ECHO 0 ; 
 OPTI TRAC 'PSC' ;                  
 OPTI 'FTRA' 'CT_calc.ps' ;
-OPTI 'ERRE' 'FATAL' ;
+*OPTI 'ERRE' 'FATAL' ;
+
+*------------------------ MAILLAGE -----------------------*
+
+OPTI 'REST' 'CT_mesh.sauv';
+REST;	
+
+*------------------------ VAR CALC -----------------------*
 
 'OPTI' 'ACQU' 'data_calcul.dgibi';
 
@@ -48,48 +55,7 @@ PHI  = val0;
 
 'MESS' '*****************************';
 
-*------------------------ MAILLAGE -----------------------*
-
-OPTI 'REST' 'CT_mesh.sauv';
-REST;	
-
-OPTI DIME DIME0 ELEM ELEM1;
 OPTI EPSI 'UTILISATEUR' ;
-
-SI (DIME0 'EGA' 2);
-  SI (LINE0 'EGA' 1);
-    ELEM0 = 'LINEAIRE';
-    ELEM1 = QUA4;
-    ELEM2 = ELEM1;
-    SI (REDU0 'EGA' 1);
-     ELEM2 = Q4RI; FINSI;
-    SI (BBAR0 'EGA' 1);
-     ELEM2 = ICQ4; FINSI;
-  SINON;
-    ELEM0 = 'QUADRATIQUE';
-    ELEM1 = QUA8;
-    ELEM2 = ELEM1;
-    SI (REDU0 'EGA' 1);
-     ELEM2 = Q8RI; FINSI;
-  FINSI;
-FINSI;
-SI (DIME0 'EGA' 3);
-  SI (LINE0 'EGA' 1);
-    ELEM0 = 'LINEAIRE';
-    ELEM1 = CUB8;
-    ELEM2 = ELEM1;
-    SI (REDU0 'EGA' 1);
-     ELEM2 = ''; FINSI;
-    SI (BBAR0 'EGA' 1);
-     ELEM2 = ICC8; FINSI;
-  SINON;
-    ELEM0 = 'QUADRATIQUE';
-    ELEM1 = CU20;
-    ELEM2 = ELEM1;
-    SI (REDU0 'EGA' 1);
-     ELEM2 = ''; FINSI;
-  FINSI;
-FINSI;
 
 *------------------------ MODELE ET MATERIAU -----------------------*
 *
@@ -115,11 +81,10 @@ DPLMAX = 2. ;
 GRAPH  = VRAI ;
 *
 ALPHA = 0. ;
-T     = 25. ;
 
 ** MATERIAU GOUPILLE 
 *********************
- MOD1   = 'MODE' GOUP 'MECANIQUE' 'ELASTIQUE' 'ISOTROPE' ; 
+ MOD1   = 'MODE' GOUP 'MECANIQUE' 'ELASTIQUE' 'ISOTROPE' ELEM2 ; 
  MAT1   = 'MATE' MOD1 'YOUN' YOUN0 'NU' NU 'RHO' RHO0 ;
 
 ** MATERIAU LIGAMENT ET CT 
@@ -163,13 +128,13 @@ SI (GTN 'EGA' 1) ;
  	FINSI ;	
 *
   MOD2   = 'MODELISER' ENTA 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
-    'UTILISATEUR' 'LIB_LOI' 'src/libUmatBehaviour.so' 
+    'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
     'FCT_LOI' 'umatgtn_malls' 'C_MATERIAU' 
     COEL 'C_VARINTER' STATEV ;
   MAT2   = 'MATERIAU' MOD2 'YOUN' YOUN1 'NU' NU 
     'RHO' RHO1 'PHI' PHI ;
   MOD3 = 'MODELISER' CT 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
-    'UTILISATEUR' 'LIB_LOI' 'src/libUmatBehaviour.so' 
+    'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
     'FCT_LOI' 'umatgtn_malls' 'C_MATERIAU' 
     COEL 'C_VARINTER' STATEV ;
   MAT3 = 'MATERIAU' MOD3 'YOUN' YOUN1 'NU' NU 
@@ -240,7 +205,11 @@ TAB1.VARIABLES_INTERNES.0  = VAR0 ;
 TAB1.'MODELE'              = MODTOT ;
 *
 TAB1.'CARACTERISTIQUES'    = MATTOT ;
-TAB1.'CHARGEMENT'          = CHA0 ET CHA1;
+SI (PHI '>EG' 0);
+  TAB1.'CHARGEMENT'        = CHA0 ET CHA1;
+SINON;
+  TAB1.'CHARGEMENT'        = CHA0;
+FINSI;
 TAB1.'BLOCAGES_MECANIQUES' = CLM ;
 TAB1.'TEMPS_CALCULES'      = LTPC ;
 TAB1.'TEMPS_SAUVES'        = LTPS ;
@@ -251,7 +220,7 @@ SI (BBAR0 'EGA' 0);
 FINSI;
 TAB1.'CONVERGENCE_FORCEE'  = VRAI ;
 *
-TAB1.'PROCEDURE_PERSO1'    = FAUX ;
+TAB1.'PROCEDURE_PERSO1'    = VRAI ;
 TAB1.'PAS_AJUSTE'          = FAUX ;
 TAB1.'IND'                 = 0 ;
 TAB1.'DEP'                 = 0 ;
@@ -290,7 +259,7 @@ PASAPAS TAB1 ;
 
 OPTI SAUV 'CT_calc.sauv' ;
 SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0 ALPHA  
-LTPS LTPC GOUP ENTA ENTA_CT CTTOT MOD1 MOD2 MAT1 MAT2 T 
+LTPS LTPC GOUP ENTA ENTA_CT LIGNELIGA CTTOT MOD1 MOD2 MAT1 MAT2 
 YOUN0 YOUN1 NU RHO0 RHO1 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 VOCE  
 PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT;		 
 
