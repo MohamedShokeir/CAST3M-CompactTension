@@ -97,13 +97,14 @@ GRAPH = VRAI ;
 *------------ PARAMETRES GEOMETRIQUES, MATERIAUX ET CL -------------*
 ** GEOMETRIE CT
 *
+X_ORIGIN = 6.25;
 W = 25. ;
-a_o = 15.5 ;
+a_0 = 15.5 ;
 a_f = 7. ;
 a_i = a_f ;
 a = (0.25*W);
-a_o = (a_o+a) ;
-a_f = (a_f+a_o) ;
+a_0 = (a_0+a) ;
+a_f = (a_f+a_0) ;
 *
 * rayon de l'entaille laterale: 
 R0    = 0.25 ;
@@ -128,15 +129,15 @@ PG    = TAB0 . 'PG' POIN 'INITIAL' ;
 PH    = TAB0 . 'PH' POIN 'INITIAL' ;
 PI    = TAB0 . 'PI' POIN 'INITIAL' ;
 *
-PA1   = POIN (a_o) (0.8+(0.56799*W)) ;
-PB1   = POIN (a_o) (0.8+(6*((0.26799*W)/6))) ;
-PC1   = POIN (a_o) (0.8+(5*((0.26799*W)/6))) ;
-PD1   = POIN (a_o) (0.8+(4*((0.26799*W)/6))) ;
-PE1   = POIN (a_o) (0.8+(3*((0.26799*W)/6))) ;
-PF1   = POIN (a_o) (0.8+(2*((0.26799*W)/6))) ;
-PG1   = POIN (a_o) (0.8+(1*((0.26799*W)/6))) ;
-PH1   = POIN (a_o) 0.8 ;
-PI1   = POIN (a_o) 0. ;
+PA1   = POIN (a_0) (0.8+(0.56799*W)) ;
+PB1   = POIN (a_0) (0.8+(6*((0.26799*W)/6))) ;
+PC1   = POIN (a_0) (0.8+(5*((0.26799*W)/6))) ;
+PD1   = POIN (a_0) (0.8+(4*((0.26799*W)/6))) ;
+PE1   = POIN (a_0) (0.8+(3*((0.26799*W)/6))) ;
+PF1   = POIN (a_0) (0.8+(2*((0.26799*W)/6))) ;
+PG1   = POIN (a_0) (0.8+(1*((0.26799*W)/6))) ;
+PH1   = POIN (a_0) 0.8 ;
+PI1   = POIN (a_0) 0. ;
 *
 PA2   = POIN (a_f) (0.8+(0.56799*W)) ;
 PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) ;
@@ -158,15 +159,15 @@ PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) ;
 PH3   = POIN (1.25*W) 0.8 ;
 PI3   = POIN (1.25*W) 0. ;
 *
-PA4   = POIN (a_o-0.5) (0.8+(0.56799*W)) ;
-PB4   = POIN (a_o-0.5) (0.8+(6*((0.26799*W)/6))) ;
-PC4   = POIN (a_o-0.5) (0.8+(5*((0.26799*W)/6))) ;
-PD4   = POIN (a_o-0.5) (0.8+(4*((0.26799*W)/6))) ;
-PE4   = POIN (a_o-0.5) (0.8+(3*((0.26799*W)/6))) ;
-PF4   = POIN (a_o-0.5) (0.8+(2*((0.26799*W)/6))) ;
-PG4   = POIN (a_o-0.5) (0.8+(1*((0.26799*W)/6))) ;
-PH4   = POIN (a_o-0.5) 0.8 ;
-PI4   = POIN (a_o-0.3) 0. ;
+PA4   = POIN (a_0-0.5) (0.8+(0.56799*W)) ;
+PB4   = POIN (a_0-0.5) (0.8+(6*((0.26799*W)/6))) ;
+PC4   = POIN (a_0-0.5) (0.8+(5*((0.26799*W)/6))) ;
+PD4   = POIN (a_0-0.5) (0.8+(4*((0.26799*W)/6))) ;
+PE4   = POIN (a_0-0.5) (0.8+(3*((0.26799*W)/6))) ;
+PF4   = POIN (a_0-0.5) (0.8+(2*((0.26799*W)/6))) ;
+PG4   = POIN (a_0-0.5) (0.8+(1*((0.26799*W)/6))) ;
+PH4   = POIN (a_0-0.5) 0.8 ;
+PI4   = POIN (a_0-0.3) 0. ;
 *
 PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) ;
 PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) ;
@@ -737,7 +738,7 @@ SI (DIME0 EGA 3) ;
 *
      Lgtot       = CTTOT POINT 'PLAN' P1 P2 P3 0.01 ;
      CHX CHY CHZ = COOR Lgtot ;
-     Lg0         = (POINT CHX 'SUPERIEUR' (a_o+1.75-0.01)) COUL ROUGE ;
+     Lg0         = (POINT CHX 'SUPERIEUR' (a_0+1.75-0.01)) COUL ROUGE ;
      TRAC CACH (Lg0 ET CTTOT) ;
 *
      UZ_0        = CTTOT POINT 'PLAN' P1 P4 P3 0.01 COUL ROSE ;
@@ -782,7 +783,7 @@ SI (DIME0 EGA 3) ;
          CMOD       = TAB0 . 'CMOD' POIN 'INITIAL' ;
          CHARn      = TAB0 . 'CHARn' POIN 'INITIAL' ;
 
-         PAO        = ((a_o)+((a_i)/4)) 0. ;
+         PAO        = ((a_0)+((a_i)/4)) 0. ;
 
          PLAO_I2    = SU7 POIN 'DROI' PAO PI2 1.E-9 ;
          CHX        = CHAN 'CHAM' (COOR PLAO_I2 1) PLAO_I2 ;

@@ -2,7 +2,8 @@
 
 matrice="matrice.csv"
 mfront="Voce_IRR_faible.mfront"
-mesh="CT_mesh.sauv"
+salome="Ct.med"
+mesh="CT_mesh.dgibi"
 data_calcul="data_calcul.dgibi"
 calcul="CT_calc.dgibi"
 post="CT_post.dgibi"
@@ -17,7 +18,7 @@ while read DIME0 LINE0 BBAR0 REDU0 GTN PHI
 do
   echo "-- 2D / 3D : $DIME0"
   echo "-- Linear elements : $LINE0"
-  echo "-- Selective integration elements : $BBRA0"
+  echo "-- Selective integration elements : $BBAR0"
   echo "-- Reduced integration elements : $REDU0"
   echo "-- Damage : $GTN"
   echo "-- Thermal fluence : $PHI"
@@ -29,7 +30,7 @@ do
   sed -i "/BBAR0/c\ $BBAR0 BBAR0" $data_calcul
   sed -i "/REDU0/c\ $REDU0 REDU0" $data_calcul
   sed -i "/GTN/c\ $GTN GTN" $data_calcul
-  sed -i "/PHI0/c\ $PHI0 PHI0" $data_calcul
+  sed -i "/PHI/c\ $PHI0 PHI" $data_calcul
 
 # Creer le repertoire de l essai
   B_="12_50"
@@ -37,6 +38,7 @@ do
   cd CT"$B_"_phi$PHI0
   cp ../$mfront .
   cp ../$data_calcul .
+  cp ../$salome .
   cp ../$mesh .
   cp ../$calcul .
   cp ../$post .
@@ -47,7 +49,14 @@ do
   mfront --obuild --interface=castem $mfront
 
 # Maillage
-  castem19 $mesh > out_mesh_CT$B_
+  if [[ $DIME0 == 3 && $REDU0 == 1 ]]
+  then
+    cp ../*eso .
+    compilcast19 elquoi.eso
+    essaicast19
+  fi
+  castem19 -u $mesh > out_mesh_CT$B_
+  tar -xvf $procedur
 
 # Calcul
   tar -xvf $procedur
