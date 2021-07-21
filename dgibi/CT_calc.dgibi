@@ -214,14 +214,14 @@ TAB1.'BLOCAGES_MECANIQUES' = CLM ;
 TAB1.'TEMPS_CALCULES'      = LTPC ;
 TAB1.'TEMPS_SAUVES'        = LTPS ;
 *
-SI (BBAR0 'EGA' 0);
+SI (BBAR0 'EGA' 1);
  TAB1.'GRANDS_DEPLACEMENTS' = VRAI ;
  TAB1.'LAGRANGIEN'          = 'MOT' 'REACTUALISE' ;
 FINSI;
 TAB1.'CONVERGENCE_FORCEE'  = VRAI ;
 *
 TAB1.'PROCEDURE_PERSO1'    = VRAI ;
-TAB1.'PAS_AJUSTE'          = FAUX ;
+TAB1.'PAS_AJUSTE'          = VRAI ;
 TAB1.'IND'                 = 0 ;
 TAB1.'DEP'                 = 0 ;
 TAB1.'FOR'                 = 0 ;
