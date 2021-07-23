@@ -22,13 +22,13 @@ FINSI ;
 
 'SI'( ('DIME' TAB1.DEPLACEMENTS) > 1) ;
         
-*  SVTK (TAB1.'ESTIMATION') MO1 'CT_node' TAB1.'IND';
+* SVTK (TAB1.'ESTIMATION') MO1 'CT_node' TAB1.'IND';
   VISUPG MO1 (SVTK (TAB1.'ESTIMATION') MO1 'CT' TAB1.'IND');
   TAB1.'IND' = TAB1.'IND' '+' 1 ;
 		
   'SI' ('EXISTE' LTPC (TAB1.WTABLE.TEMPS0) 1.e-6) ;  
 
-*    SVTK (TAB1.'ESTIMATION') MO1 'CT_node' TAB1.'IND' ;
+*   SVTK (TAB1.'ESTIMATION') MO1 'CT_node' TAB1.'IND' ;
     VISUPG MO1 (SVTK (TAB1.'ESTIMATION') MO1 'CT' TAB1.'IND') ;
     TAB1.'IND' = TAB1.'IND' '+' 1 ;
 	 
@@ -46,11 +46,9 @@ FINSI ;
 'SI'( ('DIME' TAB1.DEPLACEMENTS) > 1) ;
 
   SI (DIME0 EGA 3);
-    TMP1 = 2.*('EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD1));
-    TMP2 = 2.*('EXCO' TAB1.ESTIMATION.REACTIONS 'FY') ;
+    TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD1) ;
   SINON ;
-    TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD);
-    TMP2 = 'EXCO' TAB1.ESTIMATION.REACTIONS 'FY' ;
+    TMP1 = 'EXTRAIRE' TAB1.ESTIMATION.DEPLACEMENTS 'UY' (CMOD) ;
   FINSI ;
   UN = 'MANUEL' CHPO CHARn 1 'SCAL' 1. ;
   TMP2 = ABS('XTY' TMP2 UN ('MOTS' 'SCAL') ('MOTS' 'SCAL')) ;
@@ -60,7 +58,7 @@ FINSI ;
   FMAX = MAXI (TAB1.FOR) ;
 
   'OPTION' 'SORTIR' 'force_cmod.csv' ;
-  'SORTIR' EXCE TAB1.DEP TAB1.FOR SEPA TABU ;
+  'SORTIR' EXCE TAB1.DEP TAB1.FOR ;
 
 FINSI ;
 
@@ -75,11 +73,10 @@ SI (GTN EGA 1) ;
 
      SI (DIME0 EGA 3) ;
        CHX CHY CHZ = COOR Lg0;
-       LIGNELIGA3 = POINT CHX 'INFERIEUR' (a_f);
-*         LIGNELIGA3 = MAIL1 POINT 'PLAN' (0. 0. 0.) (1. 0. 0.) (0. 0. 1) 1.E-9 ;
-     	 LIGA       = MAIL1 ELEM 'APPUYE' 'LARGEMENT' LIGNELIGA3 ;
+       LIGNELIGA3  = POINT CHX 'INFERIEUR' (a_2);
+     	 LIGA        = MAIL1 ELEM 'APPUYE' 'LARGEMENT' LIGNELIGA3 ;
      	 SINON ;
-             LIGA   = MAIL1 ELEM APPUYE LARGEMENT LIGNELIGA ;
+             LIGA  = MAIL1 ELEM APPUYE LARGEMENT LIGNELIGA ;
      FINSI ;
 
 *    LIST (NBEL (LIGA)) ;
@@ -146,7 +143,7 @@ SI (GTN EGA 1) ;
 *-----------------------------------------------------
              LMCAV1   = TAB1.LMCAV ;
              LVARCAV1 = TAB1.LVARMCAV ;
-	         MCAV1    = (EXTR LMCAV1 (DIME LMCAV1)) ;
+	           MCAV1    = (EXTR LMCAV1 (DIME LMCAV1)) ;
 	
      FINSI ;
 
@@ -208,6 +205,7 @@ SI (GTN EGA 1) ;
 *
 * BOUCLE LES TOUTES LES MAILLES DU LIGNE LIGA *
 *----------------------------------------------
+     VALFMAX = F00;
      REPE IND1 NELEM ;
          NPGCASSE = 0. ;
 ** BOUCLE SUR LES POINTS DE GAUSS D UN ELEMENT FINI *
@@ -218,9 +216,13 @@ SI (GTN EGA 1) ;
              VALF = EXTR PORO_ENDL 'F' 1 (&IND1) (&IND2) ;
              VALP = EXTR EPS_PLASL 'P' 1 (&IND1) (&IND2) ;
              VALB = EXTR BROK_ENDL 'BROK' 1 (&IND1) (&IND2) ;
-**		     LIST (VALF) ;
-**		     LIST (VALP) ;
-**		     LIST (VALB) ;
+
+             SI (VALF > VALFMAX);
+               VALFMAX = VALF;
+             SINON;
+**		       LIST (VALF) ;
+**		       LIST (VALP) ;
+**		       LIST (VALB) ;
              COUPURE = 0.9 ;
 			 
 *            SI (((VALF > (COUPURE * FR0)) ET ((VALB EGA 0.5) OU (VALB > 0.5))) OU (VALP > 0.5));
@@ -255,7 +257,7 @@ SI (GTN EGA 1) ;
 	 FINSI ;
 
      MAILREST    = CHMFISS ELEM 'INFERIEUR' (NPGCRIT) ;
-     LIST (NBEL (MAILREST)) ;
+*     LIST (NBEL (MAILREST)) ;
      
      MAILCAST    = DIFF LIGA MAILREST ;
      NBRO        = NBEL (MAILCAST) ;
@@ -267,8 +269,8 @@ SI (GTN EGA 1) ;
      
      MESO1       = DIFF MAIL1 MAILCAST ;
      MESO2       = DIFF ENTA MAILCAST ;
-     LIST (NBEL (ENTA)) ;
-     LIST (NBEL (MESO2)) ;
+*     LIST (NBEL (ENTA)) ;
+*     LIST (NBEL (MESO2)) ;
 
 *
 * MISE A JOUR DU MODELE ET DU MATERIAU
@@ -305,15 +307,12 @@ SI (GTN EGA 1) ;
 *******************************************************
 *
 MESS '**********************************************************************' ;
-MESS '** Nombre total d elements du maillage initial :' (NBEL (CTTOT)) ;
-MESS '** Nombre total d elements du maillage apres endo. :' (NBEL (MESO1)) ;
-MESS '** Average porosity :' MCAV2 ;
-MESS '** Previous value of porosity :' MCAV1 ;
-MESS '** Relative variation of f :' VARIA ;                                       
-MESS '** Broken Gauss points tot :' NPBROKEN ;
-MESS '** Broken elements tot :' NEBROKEN ;
-MESS '** Nombre de pts Gauss casses par pas de temps :' NBPGCAST1 ;
-MESS '** elements casses a chaque pas de temps :' NBRO ;	
+MESS '** Porosity maximum: ' VALFMAX ;
+MESS '** Relative variation of maximum porosity:' DF ;                                       
+MESS '** Total broken Gauss points: ' NPBROKEN ;
+MESS '** Total broken elements: ' NEBROKEN ;
+MESS '** Broken Gauss points at timestep: ' NBPGCAST1 ;
+MESS '** Broken Gauss points at timestep: ' NBRO ;	
 MESS '** Resultant force (N): ' F ;
 MESS '** Max force (N): ' FMAX ;
 MESS '************************************************************************' ;
@@ -341,6 +340,8 @@ MESS '************************************************************************' 
 		 FINSI ;
 	 FINSI ;
 *
+* FINSI DE SI GTN EGA 1
+FINSI ;
 **************************************************
 *  ESTIMATION DE L INCREMENT MAXIMAL DE POSOSITE *
 **************************************************
@@ -348,42 +349,70 @@ MESS '************************************************************************' 
 
      'SI'(('DIME' TAB1.DEPLACEMENTS) > 1) ;
      
-              TMP  =  TAB1.'F_PREC';
-              TMP  = CHAN TMP MODTOT 'STRESSES' ;
-              TMP2 = 'EXCO' TAB1.ESTIMATION.VARIABLES_INTERNES 'F' ;
-              TMP2 = CHAN TMP2 MODTOT 'STRESSES' ;
-              TMP3 = 'EXCO' TAB1.ESTIMATION.VARIABLES_INTERNES 'BROK' ;
-              TMP3 = CHAN TMP3 MODTOT 'STRESSES' ;
+              TMP1  = TAB1.'P_PREC';
+              TMP1  = CHAN TMP1 MODTOT 'STRESSES' ;
+
+              TMP4 = 'EXCO' TAB1.ESTIMATION.VARIABLES_INTERNES 'P' ;
+              TMP4 = CHAN TMP4 MODTOT 'STRESSES' ;
+
+              SI (GTN 'EGA' 1);
+                TMP  = TAB1.'F_PREC';
+                TMP  = CHAN TMP MODTOT 'STRESSES' ;
+
+                TMP2 = 'EXCO' TAB1.ESTIMATION.VARIABLES_INTERNES 'F' ;
+                TMP2 = CHAN TMP2 MODTOT 'STRESSES' ;
+                TMP3 = 'EXCO' TAB1.ESTIMATION.VARIABLES_INTERNES 'BROK' ;
+                TMP3 = CHAN TMP3 MODTOT 'STRESSES' ;
      	     
+                TMP2 = 'REDU' TMP2 MESO1 ;
+                TMP3 = 'REDU' TMP3 MESO1 ;
+                TMP4 = 'REDU' TMP4 MESO1 ;
      	     
-              TMP  = 'REDU' TMP MESO1 ;
-              TMP2 = 'REDU' TMP2 MESO1 ;
-              TMP3 = 'REDU' TMP3 MESO1 ;
+                TMPA_F  = ('NOMC' TMP 'SCAL')*('NOMC' (1 '-' TMP3) 'SCAL') ;
+                TMP2A = ('NOMC' TMP2 'SCAL')*('NOMC' (1 '-' TMP3) 'SCAL') ;
      	     
-              TMPA  = ('NOMC' TMP 'SCAL')*('NOMC' (1 '-' TMP3) 'SCAL') ;
-              TMP2A = ('NOMC' TMP2 'SCAL')*('NOMC' (1 '-' TMP3) 'SCAL') ;
-     	     
-              FP = 'MAXIMUM' TMPA ;
-              FA = 'MAXIMUM' TMP2A ;
-              DF = 'ABS'(FA '-' FP) ;
-     	     
-              TAB1.'F_PREC' = TMP2 ;
-     	     
-              'SINON' ;
+                TMPA_P  = ('NOMC' TMP1 'SCAL')*('NOMC' (1 '-' TMP3) 'SCAL') ;
+                TMP4A = ('NOMC' TMP4 'SCAL')*('NOMC' (1 '-' TMP3) 'SCAL') ;
+
+                FP = 'MAXIMUM' TMPA_F ;
+                FA = 'MAXIMUM' TMP2A ;
+                DF = 'ABS'(FA '-' FP) ;
+
+                TAB1.'F_PREC' = TMP2 ;
+
+              SINON;
+
+                TMP4 = 'REDU' TMP4 MO1 ;
+                TMPA_P  = ('NOMC' TMP1 'SCAL') ;
+                TMP4A = ('NOMC' TMP4 'SCAL');
+
+              FINSI;
+ 
+                PP = 'MAXIMUM' TMPA_P ;
+                PA = 'MAXIMUM' TMP4A ;
+                DP = 'ABS'(PA '-' PP) ;
+ 
+                TAB1.'P_PREC' = TMP4 ;
+                
+            'SINON' ;
      	     
               DF = 0 ;
+              DP = 0 ;
      
      'FINSI' ;
 
 **'MESSAGE' TAB1.'NBRO' ;
 **'MESSAGE' DF ;
 
+     TAB1.WTABLE.'DP' = DP ;
+     TAB1.WTABLE.'DPMAX' = TAB1.'DPMAX' ;
+   SI (GTN 'EGA' 1);
      TAB1.WTABLE.'DF' = DF ;
      TAB1.WTABLE.'DFMAX' = TAB1.'DFMAX' ;
-
+   FINSI;
 *MESS 'FIN DE L ESTIMATION DE L INCREMMENT DE PORO' ;
 
-FINSI ;
+
 
 
 ************************************
@@ -395,10 +424,10 @@ FINSI ;
 SI (('DIME' TAB1.DEPLACEMENTS) > 1) ;
   OPTI SAUV 'CT_calc1.sauv' ;
   SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0 ALPHA  
-  LTPS LTPC GOUP ENTA ENTA_CT LIGNELIGA CTTOT Lg0 a_0 a_f
+  LTPS LTPC GOUP ENTA ENTA_CT LIGNELIGA CTTOT Lg0 a_1 a_2
   MOD1 MOD2 MAT1 MAT2 YOUN0 YOUN1 NU RHO0 RHO1 
   BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 VOCE  
-  PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT;	
+  PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT PAO;	
 
   SI (GTN 'EGA' 1);
     SI ((((NBEL (LGA)) < 4) OU ((NBEL (LGA)) EGA 4)) 

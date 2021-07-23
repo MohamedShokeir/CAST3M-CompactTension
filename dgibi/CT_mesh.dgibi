@@ -97,14 +97,18 @@ GRAPH = VRAI ;
 *------------ PARAMETRES GEOMETRIQUES, MATERIAUX ET CL -------------*
 ** GEOMETRIE CT
 *
-X_ORIGIN = 6.25;
-W = 25. ;
+W   = 25. ;
+* Distance entre CMOD et le blocage en Y
 a_0 = 15.5 ;
-a_f = 7. ;
-a_i = a_f ;
-a = (0.25*W);
-a_0 = (a_0+a) ;
-a_f = (a_f+a_0) ;
+* Distance entre CMOD et la position de deraffinement en X
+*a_1 = 13.75 ;
+a_1 = 15. ;
+* Distance sur laquelle on propage la fissure
+a_f = 4. ;
+*
+a   = (0.25*W) ;
+a_1 = (a_1+a) ;
+a_2 = (a_f+a_1) ;
 *
 * rayon de l'entaille laterale: 
 R0    = 0.25 ;
@@ -129,25 +133,25 @@ PG    = TAB0 . 'PG' POIN 'INITIAL' ;
 PH    = TAB0 . 'PH' POIN 'INITIAL' ;
 PI    = TAB0 . 'PI' POIN 'INITIAL' ;
 *
-PA1   = POIN (a_0) (0.8+(0.56799*W)) ;
-PB1   = POIN (a_0) (0.8+(6*((0.26799*W)/6))) ;
-PC1   = POIN (a_0) (0.8+(5*((0.26799*W)/6))) ;
-PD1   = POIN (a_0) (0.8+(4*((0.26799*W)/6))) ;
-PE1   = POIN (a_0) (0.8+(3*((0.26799*W)/6))) ;
-PF1   = POIN (a_0) (0.8+(2*((0.26799*W)/6))) ;
-PG1   = POIN (a_0) (0.8+(1*((0.26799*W)/6))) ;
-PH1   = POIN (a_0) 0.8 ;
-PI1   = POIN (a_0) 0. ;
+PA1   = POIN (a_1) (0.8+(0.56799*W)) ;
+PB1   = POIN (a_1) (0.8+(6*((0.26799*W)/6))) ;
+PC1   = POIN (a_1) (0.8+(5*((0.26799*W)/6))) ;
+PD1   = POIN (a_1) (0.8+(4*((0.26799*W)/6))) ;
+PE1   = POIN (a_1) (0.8+(3*((0.26799*W)/6))) ;
+PF1   = POIN (a_1) (0.8+(2*((0.26799*W)/6))) ;
+PG1   = POIN (a_1) (0.8+(1*((0.26799*W)/6))) ;
+PH1   = POIN (a_1) 0.8 ;
+PI1   = POIN (a_1) 0. ;
 *
-PA2   = POIN (a_f) (0.8+(0.56799*W)) ;
-PB2   = POIN (a_f) (0.8+(6*((0.26799*W)/6))) ;
-PC2   = POIN (a_f) (0.8+(5*((0.26799*W)/6))) ;
-PD2   = POIN (a_f) (0.8+(4*((0.26799*W)/6))) ;
-PE2   = POIN (a_f) (0.8+(3*((0.26799*W)/6))) ;
-PF2   = POIN (a_f) (0.8+(2*((0.26799*W)/6))) ;
-PG2   = POIN (a_f) (0.8+(1*((0.26799*W)/6))) ;
-PH2   = POIN (a_f) 0.8 ;
-PI2   = POIN (a_f) 0. ;
+PA2   = POIN (a_2) (0.8+(0.56799*W)) ;
+PB2   = POIN (a_2) (0.8+(6*((0.26799*W)/6))) ;
+PC2   = POIN (a_2) (0.8+(5*((0.26799*W)/6))) ;
+PD2   = POIN (a_2) (0.8+(4*((0.26799*W)/6))) ;
+PE2   = POIN (a_2) (0.8+(3*((0.26799*W)/6))) ;
+PF2   = POIN (a_2) (0.8+(2*((0.26799*W)/6))) ;
+PG2   = POIN (a_2) (0.8+(1*((0.26799*W)/6))) ;
+PH2   = POIN (a_2) 0.8 ;
+PI2   = POIN (a_2) 0. ;
 *
 PA3   = POIN (1.25*W) (0.8+(0.56799*W)) ;
 PB3   = POIN (1.25*W) (0.8+(6*((0.26799*W)/6))) ;
@@ -159,33 +163,33 @@ PG3   = POIN (1.25*W) (0.8+(1*((0.26799*W)/6))) ;
 PH3   = POIN (1.25*W) 0.8 ;
 PI3   = POIN (1.25*W) 0. ;
 *
-PA4   = POIN (a_0-0.5) (0.8+(0.56799*W)) ;
-PB4   = POIN (a_0-0.5) (0.8+(6*((0.26799*W)/6))) ;
-PC4   = POIN (a_0-0.5) (0.8+(5*((0.26799*W)/6))) ;
-PD4   = POIN (a_0-0.5) (0.8+(4*((0.26799*W)/6))) ;
-PE4   = POIN (a_0-0.5) (0.8+(3*((0.26799*W)/6))) ;
-PF4   = POIN (a_0-0.5) (0.8+(2*((0.26799*W)/6))) ;
-PG4   = POIN (a_0-0.5) (0.8+(1*((0.26799*W)/6))) ;
-PH4   = POIN (a_0-0.5) 0.8 ;
-PI4   = POIN (a_0-0.3) 0. ;
+PA4   = POIN (a_1-0.5) (0.8+(0.56799*W)) ;
+PB4   = POIN (a_1-0.5) (0.8+(6*((0.26799*W)/6))) ;
+PC4   = POIN (a_1-0.5) (0.8+(5*((0.26799*W)/6))) ;
+PD4   = POIN (a_1-0.5) (0.8+(4*((0.26799*W)/6))) ;
+PE4   = POIN (a_1-0.5) (0.8+(3*((0.26799*W)/6))) ;
+PF4   = POIN (a_1-0.5) (0.8+(2*((0.26799*W)/6))) ;
+PG4   = POIN (a_1-0.5) (0.8+(1*((0.26799*W)/6))) ;
+PH4   = POIN (a_1-0.5) 0.8 ;
+PI4   = POIN (a_1-0.3) 0. ;
 *
-PA5   = POIN (a_f+0.5) (0.8+(0.56799*W)) ;
-PB5   = POIN (a_f+0.5) (0.8+(6*((0.26799*W)/6))) ;
-PC5   = POIN (a_f+0.5) (0.8+(5*((0.26799*W)/6))) ;
-PD5   = POIN (a_f+0.5) (0.8+(4*((0.26799*W)/6))) ;
-PE5   = POIN (a_f+0.5) (0.8+(3*((0.26799*W)/6))) ;
-PF5   = POIN (a_f+0.5) (0.8+(2*((0.26799*W)/6))) ;
-PG5   = POIN (a_f+0.5) (0.8+(1*((0.26799*W)/6))) ;
-PH5   = POIN (a_f+0.5) 0.8 ;
-PI5   = POIN (a_f+0.5) 0. ;
+PA5   = POIN (a_2+0.5) (0.8+(0.56799*W)) ;
+PB5   = POIN (a_2+0.5) (0.8+(6*((0.26799*W)/6))) ;
+PC5   = POIN (a_2+0.5) (0.8+(5*((0.26799*W)/6))) ;
+PD5   = POIN (a_2+0.5) (0.8+(4*((0.26799*W)/6))) ;
+PE5   = POIN (a_2+0.5) (0.8+(3*((0.26799*W)/6))) ;
+PF5   = POIN (a_2+0.5) (0.8+(2*((0.26799*W)/6))) ;
+PG5   = POIN (a_2+0.5) (0.8+(1*((0.26799*W)/6))) ;
+PH5   = POIN (a_2+0.5) 0.8 ;
+PI5   = POIN (a_2+0.5) 0. ;
 *
 *
 *--------------------- CREATION DES DROITES -----------------------*
 *
 *
 * deraffinement en Y : nb d'elements grossiers vers nb d'elements fins
-NBSUPY = 12 ;
-NBINFY = 72 ;
+NBSUPY = 7 ;
+NBINFY = 42 ;
 *
 * deraffinement en X : nb d'elements grossiers vers nb d'elements fins
 ** rangee 1 (au dessus de la fissure)
@@ -283,15 +287,15 @@ DROI51 = DROI (2) PF2 PF5 ;
 
 DRT8 = DROI46 ET DROI47 ET DROI48 ET DROI49 ET DROI50 ET DROI51 ;
 * 
-DROI55 = DROI (2) PA5 PA3 ;
-DROI56 = DROI (2) PB5 PB3 ;
-DROI57 = DROI (2) PC5 PC3 ; 
-DROI58 = DROI (2) PD5 PD3 ; 
-DROI59 = DROI (2) PE5 PE3 ; 
-DROI60 = DROI (2) PF5 PF3 ; 
-DROI61 = DROI (2) PG5 PG3 ; 
-DROI62 = DROI (2) PH5 PH3 ;   
-DROI63 = DROI (2) PI5 PI3 ;
+DROI55 = DROI (4) PA5 PA3 ;
+DROI56 = DROI (4) PB5 PB3 ;
+DROI57 = DROI (4) PC5 PC3 ; 
+DROI58 = DROI (4) PD5 PD3 ; 
+DROI59 = DROI (4) PE5 PE3 ; 
+DROI60 = DROI (4) PF5 PF3 ; 
+DROI61 = DROI (4) PG5 PG3 ; 
+DROI62 = DROI (4) PH5 PH3 ;   
+DROI63 = DROI (4) PI5 PI3 ;
 
 DRT9 = DROI55 ET DROI56 ET DROI57 ET DROI58 ET DROI59 ET DROI60
        ET DROI61  ET DROI62 ET DROI63 ;
@@ -602,9 +606,11 @@ SI (DIME0 EGA 3) ;
 *
 *------------------ PASSAGE A UN MAILLAGE VOLUMIQUE ---------------*
 
-     NEP = 20 ;
+     NEP1 = 6 ;
+     NEP2 = 5 ;
 
-     W0 = 0. 0. 5.625 ;
+     W00 = 0. 0. 5 ;
+     W01 = 0. 0. 1.625 ;
 
      W1 = 0. 0. (R0-(R0*(COS(60/4)))) ;
      V1 = 0. (R0*(SIN(60/4))) 0. ;
@@ -621,9 +627,14 @@ SI (DIME0 EGA 3) ;
      W5 = 0. 0. 0.625 ;
      V5 = 0. (0.8-0.294819) 0. ;
 
-     GOUP0 = GOUP VOLU NEP TRAN W0 ;
-     CT0   = CT VOLU NEP TRAN W0 ;
-     ENTA0 = ENTA VOLU NEP TRAN W0 ;
+     GOUP0 = GOUP VOLU NEP1 TRAN W00 ;
+     GOUP0 = GOUP0 VOLU NEP2 TRAN W01 ;
+     
+     CT0   = CT VOLU NEP1 TRAN W00 ;
+     CT0   = CT0 VOLU NEP2 TRAN W01 ;
+     
+     ENTA0 = ENTA VOLU NEP1 TRAN W00 ;
+     ENTA0 = ENTA0 VOLU NEP2 TRAN W01 ;
 
      CTTOT1 = GOUP0 ET CT0 ET ENTA0 ;
      TRAC CACH CTTOT1 ;
@@ -735,10 +746,12 @@ SI (DIME0 EGA 3) ;
      P2          = (0. 0. 1.) ;
      P3          = (10. 0. 0.) ;
      P4          = (0. 1. 0.) ;
+     PAO         = (((a_0)+a) 0. 0.) ;
 *
      Lgtot       = CTTOT POINT 'PLAN' P1 P2 P3 0.01 ;
      CHX CHY CHZ = COOR Lgtot ;
-     Lg0         = (POINT CHX 'SUPERIEUR' (a_0+1.75-0.01)) COUL ROUGE ;
+     
+     Lg0         = (POINT CHX 'SUPERIEUR' (a_0+a)) COUL ROUGE ;
      TRAC CACH (Lg0 ET CTTOT) ;
 *
      UZ_0        = CTTOT POINT 'PLAN' P1 P4 P3 0.01 COUL ROSE ;
@@ -782,8 +795,8 @@ SI (DIME0 EGA 3) ;
 
          CMOD       = TAB0 . 'CMOD' POIN 'INITIAL' ;
          CHARn      = TAB0 . 'CHARn' POIN 'INITIAL' ;
-
-         PAO        = ((a_0)+((a_i)/4)) 0. ;
+                
+         PAO        = (((a_0)+a) 0) ;
 
          PLAO_I2    = SU7 POIN 'DROI' PAO PI2 1.E-9 ;
          CHX        = CHAN 'CHAM' (COOR PLAO_I2 1) PLAO_I2 ;
