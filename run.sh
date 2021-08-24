@@ -1,7 +1,7 @@
 #!/bin/bash
 
 matrice="matrice.csv"
-mfront="Voce_IRR_faible.mfront"
+mfront="GursonTvergaardNeedleman1982"
 salome="Ct.med"
 mesh="CT_mesh.dgibi"
 data_calcul="data_calcul.dgibi"
@@ -45,31 +45,32 @@ do
   cp ../$procedur .
 
 # MFront
-  #tar xvf $mfront
-  mfront --obuild --interface=castem $mfront
+  tar xvf $mfront.tar
+  mfront --obuild --interface=castem $mfront.mfront
 
 # Maillage
   if [[ $DIME0 == 3 && $REDU0 == 1 ]]
   then
     cp ../*eso .
-    compilcast19 elquoi.eso
-    essaicast19
+    compilcast20 elquoi.eso
+    essaicast20
   fi
-  castem19 -u $mesh > out_mesh_CT$B_
+  castem20 -u $mesh > out_mesh_CT$B_
   tar -xvf $procedur
 
 # Calcul
   tar -xvf $procedur
-  castem19 -u $calcul > out_calcul_CT$B_
+  castem20 -u $calcul > out_calcul_CT$B_
 
 # Post-traitement
   mkdir -p POST/
   cd POST/
+  cp ../VisuPG_v7.procedur .
   cp ../*.sauv .
   cp ../$data_calcul .
   cp -r ../src/ .
   cp ../$post .
-  castem19 $post > out_post_CT$B_
+  castem20 -u $post > out_post_CT$B_
 
 # Sortir du repertoire d essai
   cd ../..

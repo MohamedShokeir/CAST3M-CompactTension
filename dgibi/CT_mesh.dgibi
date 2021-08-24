@@ -2,7 +2,7 @@
 * CT maillage *
 ***************
 
-*OPTI ECHO 0 ;      
+OPTI ECHO 0 ;      
 OPTI TRAC 'PSC' ;                  
 OPTI 'FTRA' 'CT_mesh.ps' ;
 *OPTI 'ERRE' 'FATAL' ;
@@ -56,40 +56,40 @@ FINSI ;
 *
 
 *--------------------- OPTIONS GENERALES ---------------------------*
-SI (DIME0 'EGA' 2);
-  SI (LINE0 'EGA' 1);
-    ELEM0 = 'LINEAIRE';
-    ELEM1 = QUA4;
-    ELEM2 = ELEM1;
-    SI (REDU0 'EGA' 1);
-     ELEM2 = Q4RI; FINSI;
-    SI (BBAR0 'EGA' 1);
-     ELEM2 = ICQ4; FINSI;
-  SINON;
-    ELEM0 = 'QUADRATIQUE';
-    ELEM1 = QUA8;
-    ELEM2 = ELEM1;
-    SI (REDU0 'EGA' 1);
-     ELEM2 = Q8RI; FINSI;
-  FINSI;
+SI (DIME0 'EGA' 2) ;
+  SI (LINE0 'EGA' 1) ;
+    ELEM0 = 'LINEAIRE' ;
+    ELEM1 = QUA4 ;
+    ELEM2 = ELEM1 ;
+    SI (REDU0 'EGA' 1) ;
+     ELEM2 = Q4RI; FINSI ;
+    SI (BBAR0 'EGA' 1) ;
+     ELEM2 = ICQ4 ; FINSI ;
+  SINON ;
+    ELEM0 = 'QUADRATIQUE' ;
+    ELEM1 = QUA8 ;
+    ELEM2 = ELEM1 ;
+    SI (REDU0 'EGA' 1) ;
+     ELEM2 = Q8RI ; FINSI ;
+  FINSI ;
   OPTI DIME DIME0 ELEM ELEM1 MODE PLAN DEFO ;
-FINSI;
-SI (DIME0 'EGA' 3);
-  SI (LINE0 'EGA' 1);
-    ELEM0 = 'LINEAIRE';
-    ELEM1 = CUB8;
-    ELEM2 = ELEM1;
-    ELEM3 = QUA4;
-    SI (BBAR0 'EGA' 1);
-     ELEM2 = ICC8; FINSI;
-  SINON;
-    ELEM0 = 'QUADRATIQUE';
-    ELEM1 = CU20;
-    ELEM2 = ELEM1;
-    ELEM3 = QUA8;
-  FINSI;
+FINSI ;
+SI (DIME0 'EGA' 3) ;
+  SI (LINE0 'EGA' 1) ;
+    ELEM0 = 'LINEAIRE' ;
+    ELEM1 = CUB8 ;
+    ELEM2 = ELEM1 ;
+    ELEM3 = QUA4 ;
+    SI (BBAR0 'EGA' 1) ;
+     ELEM2 = ICC8 ; FINSI ;
+  SINON ;
+    ELEM0 = 'QUADRATIQUE' ;
+    ELEM1 = CU20 ;
+    ELEM2 = ELEM1 ;
+    ELEM3 = QUA8 ;
+  FINSI ;
   OPTI DIME 2 ELEM ELEM3 ;
-FINSI;
+FINSI ;
 
 ** INDICATEUR DE TRACE
 GRAPH = VRAI ;
@@ -101,20 +101,19 @@ W   = 25. ;
 * Distance entre CMOD et le blocage en Y
 a_0 = 15.5 ;
 * Distance entre CMOD et la position de deraffinement en X
-*a_1 = 13.75 ;
-a_1 = 15. ;
+* a_1 = 13.75 (valeur min de a_1) ;
+a_1 = 14.2 ;
 * Distance sur laquelle on propage la fissure
 a_f = 4. ;
 *
+a_i = a_f ;
 a   = (0.25*W) ;
 a_1 = (a_1+a) ;
 a_2 = (a_f+a_1) ;
 *
+B   = 1.5 ;
 * rayon de l'entaille laterale: 
-R0    = 0.25 ;
-* ??
-EPA   = 1.E-2 ;
-B     = 12.5 ;
+R0  = 0.25 ;
 *
 *--------------------------- MAILLAGE ------------------------------*
 *
@@ -188,8 +187,8 @@ PI5   = POIN (a_2+0.5) 0. ;
 *
 *
 * deraffinement en Y : nb d'elements grossiers vers nb d'elements fins
-NBSUPY = 7 ;
-NBINFY = 42 ;
+NBSUPY = 6 ;
+NBINFY = 36 ;
 *
 * deraffinement en X : nb d'elements grossiers vers nb d'elements fins
 ** rangee 1 (au dessus de la fissure)
@@ -236,7 +235,7 @@ DROI16 = DROI (1) PE2 PF2 COUL VERT ;
 
 DRT2   = DROI7 ET DROI8 ET DROI9 ET DROI10 ET 
          DROI11 ET DROI12 ET DROI13 ET DROI14 
-		 ET DROI15 ET DROI16 ; 
+		     ET DROI15 ET DROI16 ; 
 *
 *
 DROI17 = DROI (NBINFY) PG1 PG2 COUL BLEU ;
@@ -321,7 +320,7 @@ DROI81 = DROI (2) PH5 PI5 ;
 
 DRT10 = DROI64 ET DROI65 ET DROI66 ET DROI67 ET DROI68 ET DROI69
         ET DROI70 ET DROI71 ET DROI74 ET DROI75 ET DROI76 ET DROI77 
-		ET DROI78 ET DROI79 ET DROI80 ET DROI81 ;		
+		    ET DROI78 ET DROI79 ET DROI80 ET DROI81 ;		
 *
 DA3_B3 = DROI (2) PA3 PB3 ;
 DC3_B3 = DROI (1) PB3 PC3 ;
@@ -337,6 +336,7 @@ DRT11 = DA3_B3 ET DC3_B3 ET DC3_D3 ET DE3_D3 ET DE3_F3 ET DG3_F3
 *
 DRTT = DRT0 ET DRT1 ET DRT2 ET DRT3 ET DRT4 ET DRT5 ET DRT6 ET DRT7
        ET DRT8 ET DRT9 ET DRT10 ET DRT11 ;
+
 *
 *-------------- CREATION DES CONTOURS ET SURFACES -----------------*
 *
@@ -565,8 +565,10 @@ SUCT  = SU8 ET SU9 ET SU10 ET SU11 ET SU12 ET SU13 ET SU14
 		ET SU36 ET SU37 ET SU38 ET SU21 ET SU22 ET SU29 ET 
 		SU30 ET SU40 ;
 		
-SUENT = SU15 ET SU7 ET SU39 ET SU23 ET SU31 ; 
+SUENT = SU15 ET SU7 ET SU39 ET SU23 ET SU31 ;
+ELIM SUENT 1.E-9 ; 
 SU    = SUCT ET SUENT ;
+ELIM SU 1.E-9 ; 
 *
 
 SI (DIME0 EGA 3) ;
@@ -586,46 +588,47 @@ SI (DIME0 EGA 3) ;
          ELIM CT 1.E-9 ;	  
          SINON ;
              GOUP  = TAB0 . 'GOUP' ;
-	         GOUP  = TAB0 . 'GOUP' ;
+	           GOUP  = TAB0 . 'GOUP' ;
              GOUP  = CHAN ELEM0 GOUP ;
              GOUP  = GOUP ELEM QUA8 ;
 	         
              ENTA  = TAB0 . 'ENTA' ;
              ENTA  = ENTA ET SUENT ;
-	         ENTA  = CHAN ELEM0 ENTA ;
+	           ENTA  = CHAN ELEM0 ENTA ;
              ENTA  = ENTA ELEM QUA8 ;
              ELIM ENTA 1.E-9 ;
 	         
              CT    = TAB0 . 'CT' ;
              CT    = (CT ET SUCT) ;
-	         CT    = CHAN ELEM0 CT ; 
+	           CT    = CHAN ELEM0 CT ; 
              CT    = CT ELEM QUA8 ;
-             ELIM CT 1.E-5 ;
+             ELIM CT 1.E-9 ;
 			 
      FINSI ;			 
 *
 *------------------ PASSAGE A UN MAILLAGE VOLUMIQUE ---------------*
 
-     NEP1 = 6 ;
-     NEP2 = 5 ;
+     NEP1 = 5 ;
+     NEP2 = 4 ;
 
-     W00 = 0. 0. 5 ;
-     W01 = 0. 0. 1.625 ;
+     W00 = 0. 0. (((B/2) - (B/10))-(((B/2) - (B/10))/4)) ;
+     W01 = 0. 0. (((B/2) - (B/10))/4) ;
 
-     W1 = 0. 0. (R0-(R0*(COS(60/4)))) ;
-     V1 = 0. (R0*(SIN(60/4))) 0. ;
+     W1 = 0. 0. (R0-(R0*(COS(67.5/4)))) ;
+     V1 = 0. (R0*(SIN(67.5/4))) 0. ;
 
-     W2 = 0. 0. (R0-(R0*(COS((2*60)/4)))) ;
-     V2 = 0. (R0*(SIN((2*60)/4))) 0. ;
+     W2 = 0. 0. (R0-(R0*(COS((2*67.5)/4)))) ;
+     V2 = 0. (R0*(SIN((2*67.5)/4))) 0. ;
 
-     W3 = 0. 0. (R0-(R0*(COS((3*60)/4)))) ;
-     V3 = 0. (R0*(SIN((3*60)/4))) 0. ;
+     W3 = 0. 0. (R0-(R0*(COS((3*67.5)/4)))) ;
+     V3 = 0. (R0*(SIN((3*67.5)/4))) 0. ;
 
-     W4 = 0. 0. (R0-(R0*(COS((4*60)/4)))) ;
-     V4 = 0. (R0*(SIN((4*60)/4))) 0. ;
+     W4 = 0. 0. (R0-(R0*(COS((4*67.5)/4)))) ;
+     V4 = 0. (R0*(SIN((4*67.5)/4))) 0. ;
 
-     W5 = 0. 0. 0.625 ;
-     V5 = 0. (0.8-0.294819) 0. ;
+     W5 = 0. 0. (B/10) ;
+     H1 = (R0*(SIN(67.5)))+(((B/10)-(R0*(1-(COS(67.5)))))*(TAN(22.5))) ;
+     V5 = 0. (H1) 0. ;
 
      GOUP0 = GOUP VOLU NEP1 TRAN W00 ;
      GOUP0 = GOUP0 VOLU NEP2 TRAN W01 ;
@@ -665,11 +668,12 @@ SI (DIME0 EGA 3) ;
 *
 *--------------------- TRANSFORMATIONS AFFINES ---------------------*
 *
-     K1 = (0.8-(R0*(SIN(60/4))))/0.8 ;
-     K2 = (0.8-(R0*(SIN((2*60)/4))))/0.8 ;
-     K3 = (0.8-(R0*(SIN((3*60)/4))))/0.8 ;
-     K4 = (0.8-(R0*(SIN((4*60)/4))))/0.8 ;
-     K5 = (0.294819)/0.8 ;
+     K1 = (0.8-(R0*(SIN(67.5/4))))/0.8 ;
+     K2 = (0.8-(R0*(SIN((2*67.5)/4))))/0.8 ;
+     K3 = (0.8-(R0*(SIN((3*67.5)/4))))/0.8 ;
+     K4 = (0.8-(R0*(SIN((4*67.5)/4))))/0.8 ;
+     K5 = (0.8 - (H1))/0.8 ;
+
 
      F31 = F3A AFFI K1 V1 (0 1 0) ;
      F32 = F3B AFFI K2 V2 (0 1 0) ;
@@ -684,23 +688,23 @@ SI (DIME0 EGA 3) ;
      ENTA4 = F33 VOLU 1 F34 ;
      ENTA5 = F34 VOLU 4 F35  ;
 *
-     CT1 = CT0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(60/4))))) ;
-     CT2 = CT1 VOLU 1 TRAN (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
+     CT1 = CT0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(67.5/4))))) ;
+     CT2 = CT1 VOLU 1 TRAN (0 0 (R0*((COS((67.5)/4))-(COS((2*67.5)/4))))) ;
      CT3 = CT2 VOLU 1 TRAN 
-                (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
+                (0 0 (R0*((COS((2*67.5)/4))-(COS((3*67.5)/4))))) ;
      CT4 = CT3 VOLU 1 TRAN 
-                (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
-     CT5 = CT4 VOLU 4 TRAN (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
+                (0 0 (R0*((COS((3*67.5)/4))-(COS((4*67.5)/4))))) ;
+     CT5 = CT4 VOLU 4 TRAN (0 0 ((B/10)-(R0-(R0*(COS((4*67.5)/4)))))) ;
 *
-     GOUP1 = GOUP0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(60/4))))) ;
+     GOUP1 = GOUP0 VOLU 1 TRAN (0 0 (R0-(R0*(COS(67.5/4))))) ;
      GOUP2 = GOUP1 VOLU 1 TRAN 
-                (0 0 (R0*((COS((60)/4))-(COS((2*60)/4))))) ;
+                (0 0 (R0*((COS((67.5)/4))-(COS((2*67.5)/4))))) ;
      GOUP3 = GOUP2 VOLU 1 TRAN 
-                (0 0 (R0*((COS((2*60)/4))-(COS((3*60)/4))))) ;
+                (0 0 (R0*((COS((2*67.5)/4))-(COS((3*67.5)/4))))) ;
      GOUP4 = GOUP3 VOLU 1 TRAN 
-                (0 0 (R0*((COS((3*60)/4))-(COS((4*60)/4))))) ;
+                (0 0 (R0*((COS((3*67.5)/4))-(COS((4*67.5)/4))))) ;
      GOUP5 = GOUP4 VOLU 4 TRAN 
-                (0 0 (0.625-(R0-(R0*(COS((4*60)/4)))))) ;
+                (0 0 ((B/10)-(R0-(R0*(COS((4*67.5)/4)))))) ;
 *
 *----------------- GROUPES POUR LES PROP. MATERIAU ---------------*
 *
@@ -712,7 +716,7 @@ SI (DIME0 EGA 3) ;
      CT      = CT5 ;
      CT      = CHAN ELEM0 CT ; 
      CT      = CT ELEM ELEM1 ;
-     ELIM CT 1.E-5 ;
+     ELIM CT 1.E-9 ;
 
      ENTA    = ENTA0 ET ENTA1 ET ENTA2 ET ENTA3 ET ENTA4 ET ENTA5 ;
      ENTA    = CHAN ELEM0 ENTA ;
@@ -720,7 +724,7 @@ SI (DIME0 EGA 3) ;
      ELIM ENTA 1.E-9 ;
 
      ENTA_CT = ENTA ET CT ;
-     ELIM ENTA_CT 1.E-5 ;
+     ELIM ENTA_CT 1.E-9 ;
 	 
      CTTOT   = GOUP ET ENTA_CT ;
      ELIM CTTOT 1.E-9 ;
@@ -786,13 +790,14 @@ SI (DIME0 EGA 3) ;
          CT         = (CT ET SUCT) ;	  
          CT         = CHAN ELEM0 CT ; 
          CT         = CT ELEM ELEM1 ;
-         ELIM ENTA 1.E-5 ;
+         ELIM ENTA 1.E-9 ;
 		 
          ENTA_CT    = ENTA ET CT ;
-         ELIM ENTA_CT 1.E-5 ;
+         ELIM ENTA_CT 1.E-9 ;
 		 
          CTTOT      = GOUP ET ENTA_CT ;
-
+         ELIM CTTOT 1.E-9 ;
+         
          CMOD       = TAB0 . 'CMOD' POIN 'INITIAL' ;
          CHARn      = TAB0 . 'CHARn' POIN 'INITIAL' ;
                 

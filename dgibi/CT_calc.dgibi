@@ -55,7 +55,7 @@ PHI  = val0;
 
 'MESS' '*****************************';
 
-OPTI EPSI 'UTILISATEUR' ;
+OPTI EPSI 'QUADRATIQUE' ;
 
 *------------------------ MODELE ET MATERIAU -----------------------*
 *
@@ -120,22 +120,23 @@ SI (GTN 'EGA' 1) ;
    COEL   = 'MOTS' 'YOUN' 'NU' 'RHO' 'PHI' ;
   SI (DIME0 EGA 3) ;
    STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'EEXZ' 'EEYZ' 
-     'P' 'F' 'FN' 'BROK' ; 
+     'P' 'F' 'FG' 'BROK' 'FEXP' ; 
   FINSI ;
 *				 
   SI (DIME0 EGA 2) ;
-   STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'P' 'F' 'FN' 'BROK' ; 
+   STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'P' 'F' 'FG' 
+   'BROK' 'FEXP' ; 
  	FINSI ;	
 *
   MOD2   = 'MODELISER' ENTA 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
     'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
-    'FCT_LOI' 'umatgtn_malls' 'C_MATERIAU' 
+    'FCT_LOI' 'umatgtn' 'C_MATERIAU' 
     COEL 'C_VARINTER' STATEV ;
   MAT2   = 'MATERIAU' MOD2 'YOUN' YOUN1 'NU' NU 
     'RHO' RHO1 'PHI' PHI ;
   MOD3 = 'MODELISER' CT 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
     'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
-    'FCT_LOI' 'umatgtn_malls' 'C_MATERIAU' 
+    'FCT_LOI' 'umatgtn' 'C_MATERIAU' 
     COEL 'C_VARINTER' STATEV ;
   MAT3 = 'MATERIAU' MOD3 'YOUN' YOUN1 'NU' NU 
     'RHO' RHO1 'PHI' PHI ;
@@ -163,11 +164,11 @@ FINSI;
 SI (GTN 'EGA' 1) ;
   SI (DIME0 'EGA' 3) ;
    VAR0 = MANU CHML MODTOT 'EEXX' 0. 'EEYY' 0. 'EEZZ' 0. 'EEXY' 0.
-     'EEXZ' 0. 'EEYZ' 0. 'P' 0. 'F' F00 'FN' 0. 'BROK' 0. ;
+     'EEXZ' 0. 'EEYZ' 0. 'P' 0. 'F' F00 'FG' 0. 'BROK' 0. 'FEXP' 0. ;
   FINSI ;
   SI (DIME0 'EGA' 2) ;
    VAR0 = MANU CHML MODTOT 'EEXX' 0. 'EEYY' 0. 'EEZZ' 0. 'EEXY' 0. 
-     'P' 0. 'F' F00 'FN' 0. 'BROK' 0. ;
+    'P' 0. 'F' F00 'FG' 0. 'BROK' 0. 'FEXP' 0. ;
   FINSI ;	
 FINSI ;	
 
@@ -221,21 +222,22 @@ TAB1.'CONVERGENCE_FORCEE'  = VRAI ;
 TAB1.'PROCEDURE_PERSO1'    = VRAI ;
 TAB1.'PAS_AJUSTE'          = VRAI ;
 TAB1.'DPMAX'               = 5.e-2 ;
-TAB1.'P_PREC'        = MANU CHML MODTOT 'SCAL' 0. ;
+TAB1.'P_PREC'              = MANU CHML MODTOT 'SCAL' 0. ;
 TAB1.'IND'                 = 0 ;
 TAB1.'DEP'                 = 0 ;
 TAB1.'FOR'                 = 0 ;
+TAB1.'J'                   = 0 ;
+*
+TAB1.'MO_ACT'              = TABLE ;
+TAB1.'MAT_ACT'             = TABLE ; 
+TAB1.'MAI_ACT'             = TABLE ;
+*
+TAB1.'MONDEPLACEMENTS'     = TABLE ;
+TAB1.'MAREACTIONS'         = TABLE ;
+TAB1.'MACONTRAINTES'       = TABLE ;
+TAB1.'MESVAR_INTERNES'     = TABLE ;
 *
 SI (GTN 'EGA' 1);
- TAB1.'MO_ACT'              = TABLE ;
- TAB1.'MAT_ACT'             = TABLE ; 
- TAB1.'MAI_ACT'             = TABLE ;
-*
- TAB1.'MONDEPLACEMENTS'     = TABLE ;
- TAB1.'MAREACTIONS'         = TABLE ;
- TAB1.'MACONTRAINTES'       = TABLE ;
- TAB1.'MESVAR_INTERNES'     = TABLE ;
- TAB1.'J'                   = 0 ;
 *
  TAB1.'DFMAX'         = 5.e-3 ;
  TAB1.'FMAX_P'        = 0. ;
@@ -251,7 +253,7 @@ SI (GTN 'EGA' 1);
  TAB1 .'LVARMCAV'     = 0. ;
  TAB1 .'TOTPTCAS'     = 0. ; 
  TAB1 .'TOTECAS'      = 0. ;
-FINSI;
+FINSI ;
 *
 PASAPAS TAB1 ;
 	 
@@ -262,6 +264,6 @@ SAUV TAB0 TAB1 CHARn CMOD CMOD1 MODTOT MATTOT DIME0 CHA0 ALPHA
 LTPS LTPC GOUP ENTA ENTA_CT LIGNELIGA CTTOT Lg0 a_1 a_2
 MOD1 MOD2 MAT1 MAT2 YOUN0 YOUN1 NU RHO0 RHO1 
 BLM4Y BLM1Z BLM2Y BLM3X MAT3 MOD3 VOCE  
-PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT PAO;		 
+PHI MODIN CHA1 CLM F00 FR0 MODTOT MATTOT PAO ;		 
 
 FIN ;
