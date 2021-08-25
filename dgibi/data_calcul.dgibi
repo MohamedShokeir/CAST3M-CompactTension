@@ -1,3 +1,11 @@
+# B (sample thickness):
+
+ 12.50 B0
+
+# a0 (intial crack length):
+
+ 17.0 a_0
+
 # 2D or 3D:
  3 DIME0
 
@@ -14,7 +22,7 @@
  1 REDU0
 
 # DAMAGE: 
- 0 GTN
+ 1 GTN
 
 # THERMAL FLUENCE:
- 000 PHI
+ -10 PHI

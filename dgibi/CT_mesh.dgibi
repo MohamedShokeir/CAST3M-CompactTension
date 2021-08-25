@@ -11,6 +11,18 @@ OPTI 'FTRA' 'CT_mesh.ps' ;
 
 'MESS' '*****************************';
 
+* B (sample thickness):
+'ACQU' MM0*'MOT';
+'ACQU' val0*'FLOTTANT';
+B = val0;
+'MESS' ' CT thickness  = ' (B) ;
+
+* a_0 (intial crack length):
+'ACQU' MM0*'MOT';
+'ACQU' val0*'FLOTTANT';
+a_0 = val0;
+'MESS' ' a0 initial crack length  = ' (a_0) ;
+
 * 2D ou 3D:
 'ACQU' MM0*'MOT';
 'ACQU' val0*'ENTIER';
@@ -99,10 +111,11 @@ GRAPH = VRAI ;
 *
 W   = 25. ;
 * Distance entre CMOD et le blocage en Y
-a_0 = 15.5 ;
+*a_0 = 15.5 ;
 * Distance entre CMOD et la position de deraffinement en X
 * a_1 = 13.75 (valeur min de a_1) ;
-a_1 = 14.2 ;
+a_1 = a_0 - 0.5 ;
+*a_1 = 14.2 ;
 * Distance sur laquelle on propage la fissure
 a_f = 4. ;
 *
@@ -111,7 +124,7 @@ a   = (0.25*W) ;
 a_1 = (a_1+a) ;
 a_2 = (a_f+a_1) ;
 *
-B   = 1.5 ;
+*B   = 1.5 ;
 * rayon de l'entaille laterale: 
 R0  = 0.25 ;
 *

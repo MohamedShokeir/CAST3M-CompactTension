@@ -13,9 +13,11 @@ OLDIFS=$IFS
 IFS=";"
 
 [ ! -f $matrice ] && { echo "$matrice file not found"; exit 99; }
-#while read B_ DIME0 GTN LINEAR PHI
-while read DIME0 LINE0 BBAR0 REDU0 GTN PHI 
+#while read B0 DIME0 GTN LINEAR PHI
+while read B0 a_0 DIME0 LINE0 BBAR0 REDU0 GTN PHI 
 do
+  echo "-- B, CT thickness (mm) : $B0"
+  echo "-- a0, initial crack length (mm) : $a_0"
   echo "-- 2D / 3D : $DIME0"
   echo "-- Linear elements : $LINE0"
   echo "-- Selective integration elements : $BBAR0"
@@ -25,6 +27,8 @@ do
   PHI0=${PHI:0:3}
 
 # Calcul
+  sed -i "/B0/c\ $B0 B0" $data_calcul
+  sed -i "/a_0/c\ $a_0 a_0" $data_calcul
   sed -i "/DIME0/c\ $DIME0 DIME0" $data_calcul
   sed -i "/LINE0/c\ $LINE0 LINE0" $data_calcul
   sed -i "/BBAR0/c\ $BBAR0 BBAR0" $data_calcul
@@ -33,10 +37,10 @@ do
   sed -i "/PHI/c\ $PHI0 PHI" $data_calcul
 
 # Creer le repertoire de l essai
-  B_="12_50"
-  mkdir -p CT"$B_"_phi$PHI0
-  cd CT"$B_"_phi$PHI0
-  cp ../$mfront .
+  B0=${B0//./_}
+  mkdir -p CT"$B0"_phi$PHI0
+  cd CT"$B0"_phi$PHI0
+  cp ../$mfront".tar" .
   cp ../$data_calcul .
   cp ../$salome .
   cp ../$mesh .
@@ -45,8 +49,8 @@ do
   cp ../$procedur .
 
 # MFront
-  tar xvf $mfront.tar
-  mfront --obuild --interface=castem $mfront.mfront
+  tar xvf $mfront".tar"
+  mfront --obuild --interface=castem $mfront".mfront"
 
 # Maillage
   if [[ $DIME0 == 3 && $REDU0 == 1 ]]
@@ -55,12 +59,12 @@ do
     compilcast20 elquoi.eso
     essaicast20
   fi
-  castem20 -u $mesh > out_mesh_CT$B_
   tar -xvf $procedur
+  castem20 -u $mesh > out_mesh_CT$B0
 
 # Calcul
   tar -xvf $procedur
-  castem20 -u $calcul > out_calcul_CT$B_
+  castem20 -u $calcul > out_calcul_CT$B0
 
 # Post-traitement
   mkdir -p POST/
@@ -70,7 +74,7 @@ do
   cp ../$data_calcul .
   cp -r ../src/ .
   cp ../$post .
-  castem20 -u $post > out_post_CT$B_
+  castem20 -u $post > out_post_CT$B0
 
 # Sortir du repertoire d essai
   cd ../..
