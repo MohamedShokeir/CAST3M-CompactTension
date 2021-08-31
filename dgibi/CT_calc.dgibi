@@ -130,7 +130,8 @@ FINSI;
 **
 ** AVEC ENDOMMAGEMENT
 SI (GTN 'EGA' 1) ;
-   COEL   = 'MOTS' 'YOUN' 'NU' 'RHO' 'PHI' ;
+   COEL   = 'MOTS' 'YOUN' 'NU' 'RHO' 'ALPH' ;
+   PARAMS = 'MOTS' 'PHI' ;
   SI (DIME0 EGA 3) ;
    STATEV = 'MOTS' 'EEXX' 'EEYY' 'EEZZ' 'EEXY' 'EEXZ' 'EEYZ' 
      'P' 'F' 'FG' 'BROK' 'FEXP' ; 
@@ -144,15 +145,15 @@ SI (GTN 'EGA' 1) ;
   MOD2   = 'MODELISER' ENTA 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
     'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
     'FCT_LOI' 'umatgtn' 'C_MATERIAU' 
-    COEL 'C_VARINTER' STATEV ;
+    COEL 'C_VARINTER' STATEV 'PARA_LOI' PARAMS ;
   MAT2   = 'MATERIAU' MOD2 'YOUN' YOUN1 'NU' NU 
-    'RHO' RHO1 'PHI' PHI ;
+    'RHO' RHO1 ;
   MOD3 = 'MODELISER' CT 'MECANIQUE' 'ELASTIQUE' 'NON_LINEAIRE'
     'UTILISATEUR' ELEM2 'LIB_LOI' 'src/libUmatBehaviour.so' 
     'FCT_LOI' 'umatgtn' 'C_MATERIAU' 
-    COEL 'C_VARINTER' STATEV ;
+    COEL 'C_VARINTER' STATEV 'PARA_LOI' PARAMS ;
   MAT3 = 'MATERIAU' MOD3 'YOUN' YOUN1 'NU' NU 
-    'RHO' RHO1 'PHI' PHI ;
+    'RHO' RHO1 ;
 FINSI;
 **
 *------------------------ MATERIAU TOTAL ---------------------------*
@@ -209,8 +210,8 @@ CHPHI = 'MANU' 'CHPO' CTTOT 1 'PHI' PHI ;
 EV1   = 'EVOL' 'MANU' TEMPS ( 'PROG' 0. TFIN ) Y ( 'PROG' 1. 1. ) ; 
 CHA1  = 'CHAR' 'PHI' CHPHI EV1 ; 
 *
-LTPS  = (PROG 0. PAS 1.E-2 1.) ;
-LTPC  = (PROG 0. PAS 1.E-2 1.) ;
+LTPS  = (PROG 0. PAS 1.E-3 1.) ;
+LTPC  = (PROG 0. PAS 1.E-3 1.) ;
 
 *-------------- CREATION DE LA TABLE POUR PASAPAS ----------------*
 TAB1                       = TABLE ;
@@ -219,11 +220,11 @@ TAB1.VARIABLES_INTERNES.0  = VAR0 ;
 TAB1.'MODELE'              = MODTOT ;
 *
 TAB1.'CARACTERISTIQUES'    = MATTOT ;
-SI (PHI '>EG' 0);
+*SI (PHI '<' 999);
   TAB1.'CHARGEMENT'        = CHA0 ET CHA1;
-SINON;
-  TAB1.'CHARGEMENT'        = CHA0;
-FINSI;
+*SINON;
+*  TAB1.'CHARGEMENT'        = CHA0;
+*FINSI;
 TAB1.'BLOCAGES_MECANIQUES' = CLM ;
 TAB1.'TEMPS_CALCULES'      = LTPC ;
 TAB1.'TEMPS_SAUVES'        = LTPS ;
