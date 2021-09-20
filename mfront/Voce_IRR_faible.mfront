@@ -10,14 +10,22 @@ phi.setEntryName("ThermalNeutronFluence");
 
 @FlowRule{
 			
-const double sig0     = (274. +  21.57834290049524  * pow(phi, 0.3670373657762526));
-const double sigs     = (310. +  16.976813860402935   * pow(phi, 0.3779381231337419));
-const double eps_phi  = (0.0635340625  - 0.0018804575807542848 * pow(phi, 0.4831322836210727));
+const double sig0 = 270.26858068 + 21.75695306 * pow(phi,0.36763871); 
+const double sigS = 343.87514503 + 17.00261313  * pow(phi,0.37893845);
+// 7th order polynominal re written in Horner method 
+// p0(phi) = a*phi + b*phi**2 + c*phi**3 + d*phi**4 + e*phi**5 + f*phi**6 + g*phi**7 + h
+const double p0   = phi * (phi * (phi * (phi * (phi * (phi * (phi * 1.35965987e-19 - 2.52265490e-16)
+                    + 1.90672967e-13) - 7.48184145e-11) +  1.62949465e-08) -  1.92191305e-06)
+                    + 1.13008919e-04) + 3.48553942e-02;
 
-const double exp_p    = exp(-p / max(eps_phi, 1.e-10));
+//const double p0= 1.13008919e-04*phi -1.92191305e-06*pow(phi,2.) + 1.62949465e-08*pow(phi,3.) -7.48184145e-11*pow(phi,4.) + //
+//  1.90672967e-13*pow(phi,5.) -2.52265490e-16*pow(phi,6.) + 1.35965987e-19*pow(phi,7.) + 3.48553942e-02;
 
-double Rp      = sig0 + (sigs - sig0) * (1. - exp_p);
-double dRp_ddp = (sigs - sig0) * exp_p / eps_phi;
+const double exp_p = exp(-p / max(p0, 1.e-10));
+const double Q = sigS - sig0;
+    
+double Rp      = sig0 + (sigS - sig0) * (1. - exp_p);
+double dRp_ddp = Q * exp_p / p0;
 
 f       = seq - Rp ;
 df_dseq = 1. ;
